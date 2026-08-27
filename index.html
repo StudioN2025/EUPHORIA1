@@ -176,10 +176,12 @@
 
 <div id="stickUI"><div id="stickKnob"></div></div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-<script>
+<!-- ИЗМЕНЕНО: ES-модуль вместо устаревшего three.min.js -->
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+
 /* =====================================================================
-   EUPHORIA — Глава 1 «Крыша» — исправленная сборка
+   EUPHORIA — Глава 1 «Крыша»
    ===================================================================== */
 
 // ---------------------------------------------------------------- utils
@@ -227,8 +229,11 @@ AU.padChord=()=>{ if(!AU.ctx)return; const C=AU.ctx,t=C.currentTime;
 };
 AU.tick=function(dt,t){
   if(!this.ctx)return;
-  const base=G.state==='CANDY'?120:380;
-  this.windFilter.frequency.value=base+Math.sin(t*.4)*140+(G.windBoost||0)*2600;
+  // ИСПРАВЛЕНО: sin даёт -1..1, из-за чего частота уходила в минус.
+  // Теперь (sin+1)/2 даёт 0..1 — частота всегда положительная.
+  const base=G.state==='CANDY'?150:380;
+  const wob=((Math.sin(t*.4)+1)/2)*140;   // 0..140 вместо -140..140
+  this.windFilter.frequency.value=Math.max(40, base+wob+(G.windBoost||0)*2600);
   const windVol=(G.state==='MENU'?.05:G.state==='VOID'?.012:.14)+(G.windBoost||0)*.5;
   this.wind.gain.value+=(windVol-this.wind.gain.value)*Math.min(1,dt*3);
   if(this.inCandy){
@@ -364,25 +369,21 @@ const roofWorld=new THREE.Group(); scene.add(roofWorld);
 (function buildRoof(){
   const mat=(col,r=.95)=>new THREE.MeshStandardMaterial({color:col,roughness:r});
 
-  // башня
   const towerMatSide=new THREE.MeshStandardMaterial({map:winGrayTex('#83817a'),roughness:.95});
   towerMatSide.map.repeat.set(4,10);
   const tower=new THREE.Mesh(new THREE.BoxGeometry(22,60,26),
     [towerMatSide,towerMatSide.clone(),mat('#6f6d66'),mat('#6f6d66'),towerMatSide.clone(),towerMatSide.clone()]);
   tower.position.set(0,30,-43); tower.castShadow=tower.receiveShadow=true; roofWorld.add(tower);
 
-  // плита крыши
   const conc=concreteTex();conc.wrapS=conc.wrapT=THREE.RepeatWrapping;conc.repeat.set(4,4);
   const slab=new THREE.Mesh(new THREE.BoxGeometry(22,.8,26),
     new THREE.MeshStandardMaterial({map:conc,roughness:.97}));
   slab.position.set(0,59.6,-42); slab.receiveShadow=true; roofWorld.add(slab);
 
-  // парапеты (передний край открыт — для шага к обрыву)
   const par=(w,d,x,z)=>{const p=new THREE.Mesh(new THREE.BoxGeometry(w,1,d),mat('#7b7972'));
     p.position.set(x,60.5,z);p.castShadow=p.receiveShadow=true;roofWorld.add(p);};
   par(22,.5,0,-55.2); par(.5,26,-11,-42); par(.5,26,11,-42);
 
-  // будка выхода
   const hut=new THREE.Mesh(new THREE.BoxGeometry(4.4,3,3.4),mat('#75736c'));
   hut.position.set(-6,61.3,-49);hut.castShadow=hut.receiveShadow=true;roofWorld.add(hut);
   const door=new THREE.Mesh(new THREE.PlaneGeometry(1.3,2.1),mat('#4b4a46'));
@@ -401,7 +402,6 @@ const roofWorld=new THREE.Group(); scene.add(roofWorld);
     b.position.set(rnd(-9,9),60.7,rnd(-53,-33));b.rotation.y=rnd(0,3);b.castShadow=true;roofWorld.add(b);
   }
 
-  // дальний город
   const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),
     new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.95}),420);
   const d=new THREE.Object3D();const col=new THREE.Color();let idx=0;
@@ -417,7 +417,6 @@ const roofWorld=new THREE.Group(); scene.add(roofWorld);
   im.count=idx;im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;
   roofWorld.add(im);
 
-  // крупные соседние дома
   [[30,-24,14,30,16],[-34,-14,16,38,14],[-20,-70,18,44,18],[24,-66,14,36,16],
    [-56,-44,16,28,18],[52,-40,15,42,14]].forEach(([px,pz,w,h,dep])=>{
     const wm=new THREE.MeshStandardMaterial({roughness:.95});
@@ -427,7 +426,6 @@ const roofWorld=new THREE.Group(); scene.add(roofWorld);
     b.position.set(px,h/2,pz);roofWorld.add(b);
   });
 
-  // машины
   const cm=new THREE.InstancedMesh(new THREE.BoxGeometry(1.6,.9,3.4),
     new THREE.MeshStandardMaterial({color:'#fff'}),46);
   roofWorld.add(cm);roofWorld.userData.carsIM=cm;roofWorld.userData.cars=[];
@@ -436,7 +434,6 @@ const roofWorld=new THREE.Group(); scene.add(roofWorld);
     roofWorld.userData.cars.push({axis,lane,t:rnd(-200,200),v:rnd(6,14)*(Math.random()<.5?1:-1)});
   }
 
-  // пешеходы — ИСПРАВЛЕНО (была ошибка TDZ: pz использовалась до объявления)
   const pm=new THREE.InstancedMesh(new THREE.CylinderGeometry(.22,.26,1.7,6),
     new THREE.MeshStandardMaterial({color:'#fff'}),200);
   roofWorld.add(pm);roofWorld.userData.pedsIM=pm;roofWorld.userData.peds=[];
@@ -456,7 +453,6 @@ const roofWorld=new THREE.Group(); scene.add(roofWorld);
   }
   pm.count=pi;
 
-  // освещение
   const hemi=new THREE.HemisphereLight(0xd8d8d5,0x4a4a48,.95);roofWorld.add(hemi);
   const dir=new THREE.DirectionalLight(0xdededb,1.1);
   dir.position.set(70,130,-10);dir.castShadow=true;
@@ -493,7 +489,7 @@ let mia=null, miaArmPivot=null, maskItem=null;
 
 // ================================================================ МИР 3: СТРАНА ВЕСЕЛЬЯ
 const candyWorld=new THREE.Group(); scene.add(candyWorld); candyWorld.visible=false;
-const crowd=[], yellows=[], walkers=[];
+const crowd=[], walkers=[];
 (function buildCandy(){
   const P=['#ff7a59','#ffc93c','#7bdff2','#f7a1c4','#9ef01a','#c77dff','#ffd6a5','#ff5d8f'];
   const mat=(c,r=.4)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
@@ -540,7 +536,6 @@ const crowd=[], yellows=[], walkers=[];
     roofM.position.set(hs.position.x,h+.9,hs.position.z);roofM.rotation.y=hs.rotation.y+.78;
     roofM.castShadow=true;candyWorld.add(roofM);
   }
-  // шары-улыбки
   [[-22,10,-30],[26,12,20],[2,11,36]].forEach((bs,i)=>{
     const b=new THREE.Group();
     b.add(new THREE.Mesh(new THREE.SphereGeometry(2.6,20,16),mat(P[i*2+1],.25)));
@@ -553,7 +548,6 @@ const crowd=[], yellows=[], walkers=[];
     crowd.push({g:b,balloon:true});
   });
 
-  // толпа
   for(let i=0;i<58;i++){
     const a=rnd(0,Math.PI*2),r=rnd(9.5,24);
     const px=Math.cos(a)*r,pz=Math.sin(a)*r;
@@ -565,13 +559,14 @@ const crowd=[], yellows=[], walkers=[];
     h.g.position.set(px,0,pz);h.g.lookAt(0,0,0);h.dance=.9;candyWorld.add(h.g);crowd.push(h);
   }
 
-  // два патруля Жёлтых
+  const yellowsLocal=[];
   for(let i=0;i<2;i++){
     const y=makeYellow();y.g.position.set(-34-i*2.5,0,i*2-1);candyWorld.add(y.g);
     walkers.push({obj:y,path:[new THREE.Vector3(-34-i*2.5,0,i*2-1),new THREE.Vector3(38,0,i*2+1)],
                   speed:1.6,t:0,active:false});
-    yellows.push(y);
+    yellowsLocal.push(y);
   }
+  candyWorld.userData.yellows=yellowsLocal;
 
   candyWorld.add(new THREE.HemisphereLight(0xeaffff,0xffd9e8,1.0));
   const sun=new THREE.DirectionalLight(0xfff3d6,.95);
@@ -614,7 +609,6 @@ function makeHumanoid(o={}){
       M(['#3a2c22','#171310','#6b5638','#8d8d8d'][Math.floor(rnd(0,4))],.8));
     hr.position.y=.02;head.add(hr);
   }
-  // лицо: DoubleSide, нормаль +Z (ИСПРАВЛЕНО — раньше было развёрнуто назад)
   const face=new THREE.Mesh(new THREE.PlaneGeometry(.3,.3),
     new THREE.MeshBasicMaterial({map:faceTex(o.hairStyle==='mia'?'annoyed':'smile'),
       transparent:true,side:THREE.DoubleSide}));
@@ -633,7 +627,6 @@ function makeYellow(){
   const baton=new THREE.Mesh(new THREE.CylinderGeometry(.025,.03,.55,8),
     new THREE.MeshStandardMaterial({color:0x222222,roughness:.4}));
   baton.position.set(0,-.66,.02);baton.rotation.x=.2;y.armR.add(baton);
-  // плюшевый заяц с зашитыми глазами
   const toy=new THREE.Group();
   toy.add(new THREE.Mesh(new THREE.SphereGeometry(.075,10,8),
     new THREE.MeshStandardMaterial({color:0xa8845c,roughness:.9})));
@@ -743,11 +736,11 @@ function broadcast(text){const b=$('#broadcast');b.textContent=text;b.classList.
 function stopBroadcast(){$('#broadcast').classList.remove('on');}
 function showCtrl(v){$('#ctrlHint').classList.toggle('on',v);}
 
-/* Ожидание действия: клавиши ИЛИ клик/тап (тап = главный вариант).
-   Исправлено: раньше два waitKey() затирали общий обработчик. */
 function awaitChoice(codes,hints){
   return new Promise(res=>{
+    let done=false;
     const finish=code=>{
+      if(done)return;done=true;
       G.keyHandler=null;
       document.removeEventListener('pointerdown',tapH);
       res(code);
@@ -774,7 +767,6 @@ async function scriptMain(){
   await say('narr','Каждый день — как предыдущий. Каждый следующий — не лучше.');
   G.canMove=true;
 
-  // игрок сам должен подойти к краю
   await new Promise(r=>{G.edgeCheck=()=>{if(G.pos.z>=-31.35)r();};});
 
   /* ---------- порыв ветра ---------- */
@@ -908,7 +900,6 @@ async function scriptMain(){
     rush(gun.g,plazaPt.clone().add(new THREE.Vector3(0,0,2.4)),2300),
     wait(2100)]);
 
-  // Мия утаскивает за колонну
   const cols=candyWorld.userData.cols;
   let best=cols[0],bd=1e9;
   cols.forEach(c=>{const dd=c.distanceTo(new THREE.Vector3(0,0,-2));if(dd<bd){bd=dd;best=c;}});
@@ -998,8 +989,10 @@ async function scriptMain(){
 
 /* --- механика Мии --- */
 let walkerPaused=false, miaPath=[], miaTgt=0, miaWayIdx=0;
+const yellows=[];                       // заполняется после постройки мира
+function fillYellows(){candyWorld.userData.yellows.forEach(y=>yellows.push(y));}
 function miaWalkTo(pts){miaPath=pts;miaTgt=1;mia.moving=true;}
-function startWalker(i){walkers[i].active=true;walkers[i].t=0;}   // добавлено (было отсутствующим)
+function startWalker(i){walkers[i].active=true;walkers[i].t=0;}
 function miaWaypoint(i){return new Promise(r=>{
   const iv=setInterval(()=>{if(miaWayIdx>=i){clearInterval(iv);r();}},150);});}
 function miaTick(dt){
@@ -1186,6 +1179,7 @@ function animate(){
 scene.background=new THREE.Color(0x9b9c99);
 scene.fog=new THREE.FogExp2(0x9b9c99,.005);
 renderer.setClearColor(0x9b9c99);
+fillYellows();
 
  $('#startBtn').addEventListener('click',async()=>{
   AU.init();
