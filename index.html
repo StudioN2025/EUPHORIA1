@@ -119,7 +119,7 @@
   <div id="ctrlHint">WASD — идти · мышь — смотреть</div>
 </div>
 <div id="fakeTitles" class="layer"><div id="ftEnd">КОНЕЦ</div><div id="ftThanks">СПАСИБО ЗА ИГРУ</div><div id="ftChoice">ВЫБОР СДЕЛАН</div></div>
-<div id="hackUI" class="layer"><div id="hackPanel"><div id="hackTitle">// понтюм smiles.exe</div><div id="hackRow"></div><div id="hackMsg">повтори мелодию</div></div></div>
+<div id="hackUI" class="layer"><div id="hackPanel"><div id="hackTitle">// smiles.exe</div><div id="hackRow"></div><div id="hackMsg">повтори мелодию</div></div></div>
 <div id="bluePost" class="layer"><div id="blueScan"></div><div id="blueText"></div></div>
 <div id="endCard" class="layer"><div id="endTitle">EUPHORIA</div><div id="endSub">глава 1 · крыша</div><div id="endNote">продолжение следует…</div><button id="restartBtn">начать заново</button></div>
 <div id="menu" class="layer">
@@ -351,7 +351,7 @@ function photoCardTex(opts){
       x.beginPath();x.arc(px,py,10*s,0,7);x.fill();
       x.beginPath();x.moveTo(px-14*s,py+52*s);x.quadraticCurveTo(px,py+8*s,px+14*s,py+52*s);x.fill();
       x.strokeStyle='#2e2b25';x.lineWidth=2;
-      if(opts.sad)x.beginPath();else x.beginPath();
+      x.beginPath();
       x.arc(px,py+(opts.sad?6:1),4,opts.sad?1.15*Math.PI:.15*Math.PI,opts.sad?1.85*Math.PI:.85*Math.PI);x.stroke();};
     if(opts.children){
       person(cx-26,58,.7);person(cx,54,.72);person(cx+26,58,.7);
@@ -501,7 +501,7 @@ function makeYellow(){
   const toy=bunnyToy();toy.position.set(.26,.86,.14);toy.rotation.z=.5;y.g.add(toy);
   return y;}
 
-/* ==================== МИР 2: ПУСТОТА (МИЯ) ======================== */
+/* ==================== МИР 2: ПУСТОТА ============================== */
 const voidWorld=new THREE.Group();scene.add(voidWorld);
 let mia=null,miaArm=null,maskItem=null;
 (function buildVoid(){
@@ -552,14 +552,13 @@ const crowd=[],walkers=[];let yellows=[];
   for(let i=0;i<15;i++){const a=i/15*Math.PI*2+.2,r=rnd(44,60),w=rnd(7,11),h=rnd(8,16),dep=rnd(7,10),c=P[i%P.length];
     const wm=new THREE.MeshStandardMaterial({color:c,map:winCandyTex(),roughness:.35});
     wm.map.repeat.set(Math.round(w/3),Math.round(h/3));
-    const hs=new THREE.Mesh(new THREE.BoxGeometry(w,h,depe_dep_fix(dep)),[wm,wm.clone(),mat(c),mat(c),wm.clone(),wm.clone()]);
+    const hs=new THREE.Mesh(new THREE.BoxGeometry(w,h,dep),[wm,wm.clone(),mat(c),mat(c),wm.clone(),wm.clone()]);
     hs.position.set(Math.sin(a)*r,h/2-.1,Math.cos(a)*r);
     hs.rotation.y=a+Math.PI/2+rnd(-.12,.12);hs.rotation.z=rnd(-.05,.05);
     hs.castShadow=true;candyWorld.add(hs);
     const rm=new THREE.Mesh(new THREE.ConeGeometry(w*.72,rnd(2.4,4.4),4),mat(P[(i+3)%P.length]));
     rm.position.set(hs.position.x,h+.9,hs.position.z);rm.rotation.y=hs.rotation.y+.78;
     rm.castShadow=true;candyWorld.add(rm);}
-  function depe_dep_fix(d){return d;}
   [[-22,10,-30],[26,12,20],[2,11,36]].forEach((bs,i)=>{const b=new THREE.Group();
     b.add(new THREE.Mesh(new THREE.SphereGeometry(2.6,20,16),mat(P[i*2+1],.25)));
     const f=new THREE.Mesh(new THREE.PlaneGeometry(2.6,2.6),
@@ -585,7 +584,7 @@ const crowd=[],walkers=[];let yellows=[];
   sun.shadow.camera.updateProjectionMatrix();candyWorld.add(sun);
 })();
 
-/* ======================= ЛАМПЫ (до миров, где юзаются) ============ */
+/* лампы объявляем ДО миров, которые их используют */
 const bulbs=[];
 
 /* ================ МИР 4: ПРОВЕРОЧНЫЙ РАЙОН ======================== */
@@ -608,17 +607,31 @@ const pats=[];
     b.position.set(side*(11+w/2),h/2-.1,z);b.castShadow=b.receiveShadow=true;patrolWorld.add(b);}
   for(let i=0;i<8;i++){const a=new THREE.Mesh(new THREE.TorusGeometry(.5,.07,6,20),mat(P[i%6]));
     a.position.set(rnd(-4,4),rnd(5,7),40-i*11);patrolWorld.add(a);}
+  /* ---- ЛЮК + МАЯК (виден издалека) ---- */
   const hatchRing=new THREE.Mesh(new THREE.TorusGeometry(1.05,.14,8,24),mat('#4c4741',.8));
   hatchRing.rotation.x=-Math.PI/2;hatchRing.position.set(0,.12,-41);patrolWorld.add(hatchRing);
-  const hatchDark=new THREE.Mesh(new THREE.CircleGeometry(1,24),new THREE.MeshBasicMaterial({color:0x000000}));
+  const hatchDark=new THREE.Mesh(new THREE.CircleGeometry(1,24),new THREE.MeshBasicMaterial({color:0x02120a}));
   hatchDark.rotation.x=-Math.PI/2;hatchDark.position.set(0,.125,-41);patrolWorld.add(hatchDark);
+  const beacon=new THREE.Mesh(new THREE.CylinderGeometry(.85,1.15,30,18,1,true),
+    new THREE.MeshBasicMaterial({color:0xaef7c0,transparent:true,opacity:.13,
+      side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+  beacon.position.set(0,15,-41);patrolWorld.add(beacon);
+  const glowRing=new THREE.Mesh(new THREE.TorusGeometry(1.5,.09,10,36),
+    new THREE.MeshBasicMaterial({color:0xc9ffd6,transparent:true,opacity:.85,
+      blending:THREE.AdditiveBlending,depthWrite:false}));
+  glowRing.rotation.x=-Math.PI/2;glowRing.position.set(0,.2,-41);patrolWorld.add(glowRing);
+  const beaconLight=new THREE.PointLight(0x9df7b4,.9,10);
+  beaconLight.position.set(0,1.6,-41);patrolWorld.add(beaconLight);
+  patrolWorld.userData.beacon=beacon;patrolWorld.userData.glowRing=glowRing;
+  patrolWorld.userData.beaconLight=beaconLight;
+  /* указатель */
   const signC=document.createElement('canvas');signC.width=256;signC.height=64;
-  const sg=signC.getContext('2d');sg.fillStyle='#ffd23c';sg.fillRect(0,0,256,64);
-  sg.fillStyle='#111';sg.font='900 34px Manrope';sg.textAlign='center';sg.fillText('РАДУСТЬ ↑',128,44);
+  const sg=signC.getContext('2d');sg.fillStyle='#7dffa8';sg.fillRect(0,0,256,64);
+  sg.fillStyle='#04160a';sg.font='900 34px Manrope';sg.textAlign='center';sg.fillText('ВНИЗ ↓',128,44);
   const sign=new THREE.Mesh(new THREE.BoxGeometry(3.2,.8,.1),new THREE.MeshStandardMaterial({map:tx(signC),roughness:.5}));
-  sign.position.set(4.5,3.2,20);sign.rotation.y=-.5;sign.castShadow=true;patrolWorld.add(sign);
-  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,3.2,8),mat('#888'));
-  pole.position.set(4.5,1.6,20);pole.castShadow=true;patrolWorld.add(pole);
+  sign.position.set(3.6,3.4,-37);sign.rotation.y=-.5;sign.castShadow=true;patrolWorld.add(sign);
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,3.4,8),mat('#888888'));
+  pole.position.set(3.6,1.7,-37);pole.castShadow=true;patrolWorld.add(pole);
   patrolWorld.add(new THREE.HemisphereLight(0xeaffff,0xfff0d8,.9));
   const sun=new THREE.DirectionalLight(0xfff3d6,.85);
   sun.position.set(30,55,20);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
@@ -678,7 +691,6 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   const valve=new THREE.Mesh(new THREE.TorusGeometry(.3,.06,8,20),
     new THREE.MeshStandardMaterial({color:0xa33f2e,roughness:.5}));
   valve.position.set(-9.4,1.2,-24.5);valve.rotation.x=Math.PI/2;tunnelWorld.add(valve);
-  // ---- дрон-клоун ----
   droneRef=new THREE.Group();
   const ball=new THREE.Mesh(new THREE.SphereGeometry(.45,18,14),
     new THREE.MeshStandardMaterial({color:0xf2ede2,roughness:.35}));
@@ -688,7 +700,7 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   const brim=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.05,16),new THREE.MeshStandardMaterial({color:0xd8453e,roughness:.5}));
   brim.position.y=.34;droneRef.add(brim);
   const[ec,ex]=cvs(64,32);
-  ex.strokeStyle='#333';ex.lineWidth=5;ex.lineCap='round';
+  ex.strokeStyle='#333333';ex.lineWidth=5;ex.lineCap='round';
   [16,48].forEach(e=>{ex.beginPath();ex.moveTo(e-7,6);ex.lineTo(e+7,20);ex.stroke();
     ex.beginPath();ex.moveTo(e+7,6);ex.lineTo(e-7,20);ex.stroke();});
   const eyes=new THREE.Mesh(new THREE.PlaneGeometry(.5,.25),new THREE.MeshBasicMaterial({map:tx(ec),transparent:true}));
@@ -697,11 +709,10 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   nose.position.set(0,-.12,.42);droneRef.add(nose);
   const cable=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,1.4,6),new THREE.MeshStandardMaterial({color:0x444444}));
   cable.position.y=1.15;droneRef.add(cable);
-  const beacon=new THREE.PointLight(0xff3020,0,4);beacon.position.y=-.2;droneRef.add(beacon);
-  droneRef.userData={beacon,alert:0,baseY:2.1};
+  const beaconL=new THREE.PointLight(0xff3020,0,4);beaconL.position.y=-.2;droneRef.add(beaconL);
+  droneRef.userData={beacon:beaconL,alert:0,baseY:2.1};
   droneRef.position.set(-13,2.1,-25.8);
   tunnelWorld.add(droneRef);
-  // пар из трубы
   const[pc,pcx]=cvs(64,64);
   const pg=pcx.createRadialGradient(32,32,4,32,32,30);
   pg.addColorStop(0,'rgba(220,220,225,.5)');pg.addColorStop(1,'rgba(220,220,225,0)');
@@ -711,7 +722,6 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   steamG.setAttribute('position',new THREE.BufferAttribute(sp,3));
   dustP=new THREE.Points(steamG,new THREE.PointsMaterial({size:.5,map:tx(pc),transparent:true,opacity:.5,depthWrite:false}));
   tunnelWorld.add(dustP);
-  // ---- дверь с солнцем ----
   const doorPivot=new THREE.Group();doorPivot.position.set(-24.85,0,-41.2);
   const doorMesh=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,.18,26),
     new THREE.MeshStandardMaterial({map:sunDoorTex(),roughness:.8,metalness:.3}));
@@ -721,7 +731,6 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   shelterDoor={pivot:doorPivot,open:()=>new Promise(res=>{AU.creak();
     const t0=performance.now();(function sw(){const k=Math.min(1,(performance.now()-t0)/1300);
       dg.rotation.y=k*k*-1.9;k<1?requestAnimationFrame(sw):res();})();})};
-  // ==== УБЕЖИЩЕ ====
   const wire=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,1.1,6),new THREE.MeshStandardMaterial({color:0x333333}));
   wire.position.set(-31,2.65,-40.8);tunnelWorld.add(wire);
   const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,10,10),new THREE.MeshBasicMaterial({color:0xffe8b0}));
@@ -750,17 +759,12 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
     mug.position.set(kx,.97,kz);tunnelWorld.add(mug);});
   const medkit=new THREE.Mesh(new THREE.BoxGeometry(.3,.18,.2),new THREE.MeshStandardMaterial({color:0xe8e6e1,roughness:.5}));
   medkit.position.set(-26.4,1,-37.2);tunnelWorld.add(medkit);
-  // книги
   const shelf=new THREE.Mesh(new THREE.BoxGeometry(1.8,.06,.4),wood);
   shelf.position.set(-27.2,1.5,-45.5);tunnelWorld.add(shelf);
   const shelf2=shelf.clone();shelf2.position.y=1.9;tunnelWorld.add(shelf2);
   ['#b34747','#4d7a4d','#4d5d8a','#8a7a3d'].forEach((bc,i)=>{
     const bk=new THREE.Mesh(new THREE.BoxGeometry(.2,.34,.3),new THREE.MeshStandardMaterial({color:bc,roughness:.85}));
     bk.position.set(-27.8+.24*i,1.7,-45.5);tunnelWorld.add(bk);});
-  ['#b34747','#4d7a4d'].forEach((bc,i)=>{
-    const bk=new THREE.Mesh(new THREE.BoxGeometry(.2,.26,.3),new THREE.MeshStandardMaterial({color:bc,roughness:.85}));
-    bk.position.set(-27.7+.26*i,2.12,-45.5);tunnelWorld.add(bk);});
-  // граффити
   [['ТЫ ЖИВОЙ','#d8d4ca',-31,-45.75,false],
    ['НЕ ВЕРЬ УЛЫБКАМ','#e8b23c',-34.6,-45.75,false],
    ['ЖЕКА, СУКА, ВЕРНИСЬ','#c0392b',-28.2,-45.75,false],
@@ -769,12 +773,11 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
     const[gc,gx]=cvs(512,120);
     gx.font='900 54px Manrope';gx.fillStyle=col2;gx.textAlign='center';
     gx.fillText(txt,256,72);
-    const gp=new THREE.Mesh(new THREE.PlaneGeometry(txt.length>.12*txt.length*8?4.6:4.6,1.1),
+    const gp=new THREE.Mesh(new THREE.PlaneGeometry(4.6,1.1),
       new THREE.MeshBasicMaterial({map:tx(gc),transparent:true}));
     gp.position.set(px,1.35,pz);
     if(isWest)gp.rotation.y=Math.PI/2;
     tunnelWorld.add(gp);});
-  // СТЕНА ПАМЯТИ
   const photos=[
     photoCardTex({lines:['Жека','1987 — ?']}),
     photoCardTex({lines:['Лена','1992 — 2049'],cat:true}),
@@ -791,11 +794,9 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   wx.beginPath();wx.moveTo(60,80);wx.lineTo(452,80);wx.stroke();
   const header=new THREE.Mesh(new THREE.PlaneGeometry(2.6,.5),new THREE.MeshBasicMaterial({map:tx(wc),transparent:true}));
   header.position.set(-25.34,2.6,-41);header.rotation.y=Math.PI/2;tunnelWorld.add(header);
-  // ---- Фред ----
   fredObj=makeHumanoid({jumpsuit:'#5c5a52',pantsCol:'#4a4842',skin:'#d8b494',face:'tired'});
   fredObj.g.position.set(-33.2,.18,-44.5);fredObj.g.rotation.set(Math.PI/2,rnd(-.3,.3),0);
   tunnelWorld.add(fredObj.g);
-  // ---- Маруся ----
   maruObj=makeHumanoid({jumpsuit:'#7a5c3a',pantsCol:'#54503f',skin:'#caa07c',face:'annoyed'});
   maruObj.g.scale.set(1.06,1,1.18);
   maruObj.g.position.set(-26.6,0,-44);
@@ -912,7 +913,7 @@ let redObj=null,waterMesh=null,torchBeam=null;
     const l=new THREE.PointLight(0x5fa8e0,.5,9);l.position.set(0,3.3,2-i*12);waterWorld.add(l);
     bulbs.push({lamp:l,base:.5});}
   waterWorld.add(new THREE.HemisphereLight(0x3a4a58,0x0c1216,.4));
-  redObj=makeHumanoid({jumpsuit:'#16181c',pantsCol:'#101114',skin:'#8c9298',face:'smile'});
+  redObj=makeHumanoid({jumpsuit:'#16181c',pantsCol:'#101114',skin:'#8c9298'});
   redObj.g.scale.set(1.3,1.34,1.3);
   [[0,1.26,.15,.62,.5,.08],[-0.2,1.0,.14,.2,.42,.06],[0.2,1.0,.14,.2,.42,.06]]
   .forEach(([ax,ay,az,w,h,d])=>{
@@ -935,8 +936,8 @@ let redObj=null,waterMesh=null,torchBeam=null;
   tabGl.position.z=.017;tab.add(tabGl);
   redObj.armL.add(tab);redObj.tab=tab;
   redObj.g.position.set(0,0,-14);redObj.g.rotation.y=Math.PI;waterWorld.add(redObj.g);
-  const tbGeo=new THREE.ConeGeometry(2.2,14,20,1,true);
-  torchBeam=new THREE.Mesh(tbGeo,new THREE.MeshBasicMaterial({color:0xffedc8,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
+  torchBeam=new THREE.Mesh(new THREE.ConeGeometry(2.2,14,20,1,true),
+    new THREE.MeshBasicMaterial({color:0xffedc8,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
   torchBeam.rotation.x=-Math.PI/2;torchBeam.rotation.z=Math.PI;
   torchBeam.position.set(0,2.2,4);waterWorld.add(torchBeam);
 })();
@@ -946,17 +947,17 @@ const G={
   state:'MENU',canMove:false,windBoost:0,shake:0,
   pos:V(0,61.68,-50),yaw:Math.PI,pitch:0,fovBase:76,lookCur:V(0,0,0),
   fall:{v:0,roll:0,pitch:0},menuT:0,camO:false,
-  joy:100,masked:false,maskT:0,caughtN:0,scoldDone:{},longMaskSaid:false,
+  joy:100,masked:false,maskT:0,caughtN:0,longMaskSaid:false,
   subTO:0,branch:'',playerName:'',lastMX:0,lastMZ:0,lastTap:'',
   chaseDist:0,chaseActive:false,cratesGrabbed:false,patrolBusy:false,catchGlow:0,
+  hatchUsed:false,
 };
 
 /* =========================== ВВОД ================================= */
 const keys={};
 addEventListener('keydown',e=>{
   keys[e.code]=true;
-  if(e.code==='KeyE'&&['PATROL','OUTSK'].includes(G.state)&&G.canMove)toggleMask();
-  if(e.code==='KeyM'&&['PATROL','OUTSK'].includes(G.state)&&G.canMove)toggleMask();
+  if(['KeyE','KeyM'].includes(e.code)&&['PATROL','OUTSK'].includes(G.state)&&G.canMove)toggleMask();
   if(['KeyW','KeyA','KeyS','KeyD','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']
      .includes(e.code)&&G.state==='CHASE'){
     if(e.code!==G.lastTap){G.chaseDist=Math.min(100,G.chaseDist+3.4);G.lastTap=e.code;AU.splash(.05);}}
@@ -1116,39 +1117,62 @@ function placeMia(world,pos,ry=0){
   world.add(mia.g);mia.g.position.copy(pos);mia.g.position.y=0;
   mia.g.rotation.set(0,ry,0);
   mia.legL.rotation.x=0;mia.legR.rotation.x=0;mia.armL.rotation.x=0;mia.armR.rotation.x=0;
-  mia.moving=false;miaPath=[];miaTgt=0;miaWayIdx=0;}
+  mia.moving=false;miaWalk.reset();
+}
 
-/* --- Мия-ведение --- */
-let miaPath=[],miaTgt=0,miaWayIdx=0,walkerPaused=false;
-function miaWalkTo(pts){miaPath=pts;miaTgt=1;miaWayIdx=0;mia.moving=true;}
-function miaWait(){mia.moving=false;}
-function miaGo(){mia.moving=true;}
-function miaWaypoint(i){return new Promise(r=>{
-  const iv=setInterval(()=>{if(miaWayIdx>=i){clearInterval(iv);r();}},140);});}
-function miaTick(dt){
-  if(!miaPath.length||!mia.moving)return;
-  const tg=miaPath[miaTgt],dx=tg.x-mia.g.position.x,dz=tg.z-mia.g.position.z,d=Math.hypot(dx,dz);
-  if(d<.5){miaWayIdx=miaTgt;
-    if(miaTgt<miaPath.length-1)miaTgt++;else mia.moving=false;}
-  else{const sp=2.35*dt;
-    mia.g.position.x+=dx/d*sp;mia.g.position.z+=dz/d*sp;
-    const ty=Math.atan2(dx,dz);let cur=mia.g.rotation.y,
-      diff=((ty-cur+Math.PI)%(Math.PI*2))-Math.PI;
-    mia.g.rotation.y=cur+diff*Math.min(1,dt*6);}}
+/* --- движение Мии --- */
+let walkerPaused=false,lastScold=0,miaSpd=2.8,miaFollowMode=false;
+const miaWalk={
+  path:[],tgt:0,idx:0,
+  reset(){this.path=[];this.tgt=0;this.idx=0;mia.moving=false;mia.walkT=0;},
+  go(pts){this.path=pts;this.tgt=1;this.idx=0;mia.moving=true;},
+  waypoint(i){return new Promise(r=>{
+    const iv=setInterval(()=>{if(this.idx>=i){clearInterval(iv);r();}},140);});},
+  tick(dt){
+    if(!this.path.length||!mia.moving)return;
+    const tg=this.path[this.tgt],
+      dx=tg.x-mia.g.position.x,dz=tg.z-mia.g.position.z,d=Math.hypot(dx,dz);
+    if(d<.5){this.idx=this.tgt;
+      if(this.tgt<this.path.length-1)this.tgt++;else mia.moving=false;}
+    else{const sp=miaSpd*dt;
+      mia.g.position.x+=dx/d*sp;mia.g.position.z+=dz/d*sp;
+      const ty=Math.atan2(dx,dz);let cur=mia.g.rotation.y,
+        diff=((ty-cur+Math.PI)%(Math.PI*2))-Math.PI;
+      mia.g.rotation.y=cur+diff*Math.min(1,dt*6);}},
+  /* следование за игроком (улица) — никогда не застревает */
+  follow(dt,cl){
+    const px=G.pos.x,pz=G.pos.z;
+    const tx=clamp(px*.8,-3.6,3.6),tz=pz-(cl?.behind??1.9)+(cl?.lead??0);
+    const dx=tx-mia.g.position.x,dz=tz-mia.g.position.z,d=Math.hypot(dx,dz);
+    if(d>.2){
+      const spd=(d>9?5.4:d>3.5?3.4:miaSpd)*dt,mv=Math.min(d,spd);
+      mia.g.position.x+=dx/d*mv;mia.g.position.z+=dz/d*mv;
+      const ty=Math.atan2(dx,dz);let cur=mia.g.rotation.y,
+        diff=((ty-cur+Math.PI)%(Math.PI*2))-Math.PI;
+      mia.g.rotation.y=cur+diff*Math.min(1,dt*6);
+      mia.walkT+=dt*(d>9?13:9);
+      mia.legL.rotation.x=Math.sin(mia.walkT)*.55;
+      mia.legR.rotation.x=-Math.sin(mia.walkT)*.55;
+      mia.armL.rotation.x=-Math.sin(mia.walkT)*.3;
+      mia.g.position.y=Math.abs(Math.sin(mia.walkT))*.045;
+      return d;}
+    mia.legL.rotation.x*=.9;mia.legR.rotation.x*=.9;
+    return d;}
+};
 function miaSay(line,hold){
-  /* реплика на ходу без сброса маршрута */
   if(walkerPaused)return Promise.resolve();
-  walkerPaused=true;miaWait();
-  return say('miyaw',line,hold).then(()=>{walkerPaused=false;miaGo();});}
+  walkerPaused=true;const wasMoving=mia.moving;mia.moving=false;
+  return say('miyaw',line,hold).then(()=>{
+    walkerPaused=false;mia.moving=wasMoving&&miaWalk.path.length>0;});}
 function escort(interval,stateName){
+  /* замечание максимум раз в 8 секунд — без циклов-зависаний */
   const iv=setInterval(()=>{
     if(G.state!==stateName){clearInterval(iv);return;}
-    if(!mia.moving)return;
-    if(Math.hypot(mia.g.position.x-G.pos.x,mia.g.position.z-G.pos.z)>14&&!walkerPaused){
-      walkerPaused=true;miaWait();
-      say('mia',['Эй. Ноги. Двигай.','Куда понёс? Сюда надо.','Не стой столбом.',
-        'Слушай меня хоть иногда.'][G.caughtN%4],2400)
-        .then(()=>{walkerPaused=false;miaGo();});}
+    if(performance.now()-lastScold<8000)return;
+    if(Math.hypot(mia.g.position.x-G.pos.x,mia.g.position.z-G.pos.z)>13&&!walkerPaused){
+      lastScold=performance.now();
+      say('mia',['Эй. Ноги. Двигай.','Не стой столбом.','Куда понёс? Сюда надо.',
+        'Слушай меня хоть иногда.'][G.caughtN%4],2200);}
   },interval);return iv;}
 function resolveZones(nx,nz,zones){
   for(const q of zones)if(nx>=q[0]&&nx<=q[1]&&nz>=q[2]&&nz<=q[3])return[nx,nz];
@@ -1157,6 +1181,18 @@ function resolveZones(nx,nz,zones){
   for(const q of zones)if(nz>=q[2]&&nz<=q[3]&&nx>=q[0]-1.2&&nx<=q[1]+1.2)
     return[clamp(nx,q[0],q[1]),nz];
   return null;}
+
+/* watchdog: Мия с незаконченным путём не имеет права стоять */
+setInterval(()=>{
+  if(!['CANDY','TUNNEL','OUTSK'].includes(G.state))return;
+  if(walkerPaused)return;
+  if(miaWalk.path.length&&miaWalk.tgt<miaWalk.path.length-1&&!mia.moving)mia.moving=true;
+  if(miaWalk.path.length){
+    const dm=Math.hypot(mia.g.position.x-G.pos.x,mia.g.position.z-G.pos.z);
+    if(dm>26){ /* совсем потерялась — переносим поближе */
+      const nx=clamp(G.pos.x+1.2,-30,30),nz=clamp(G.pos.z-1.5,-70,60);
+      mia.g.position.set(nx,0,nz);}}
+},1500);
 
 /* ---------- дым ---------- */
 let smoke=null;
@@ -1241,27 +1277,27 @@ async function actVoid(){
 }
 async function actCandy(){
   showWorld(candyWorld,{fog:0xdaf6ff,fogD:.0022,clear:0xbfeeff});
-  AU.inCandy=true;
+  AU.inCandy=true;miaSpd=2.8;
   G.pos.set(0,1.68,46);G.yaw=Math.PI;G.pitch=0;
   G.state='CANDY';
   await fade(0,2200);await wait(400);
   await say('narr','Слишком ярко. Небо — неестественно голубое. Солнце — как нарисованное.');
   placeMia(candyWorld,V(1.5,0,45),Math.PI);
-  miaWalkTo([V(1.5,0,45),V(0,0,30),V(-4,0,14),V(6,0,3)]);
+  miaWalk.go([V(1.5,0,45),V(0,0,30),V(-4,0,14),V(6,0,3)]);
   G.canMove=true;
   ctrlTxt(IS_TOUCH?'левый палец — идти · правый — смотреть':'WASD — идти · мышь — смотреть');
   const eg=escort(1300,'CANDY');
   await say('mia','Не стой столбом. Двигай ногами.',2700);
-  await miaWaypoint(1);
+  await miaWalk.waypoint(1);
   await say('player','Где мы?');
   await say('mia','В аду, если кратко. Но здесь это называется «Страна Веселья».',3700);
   await say('mia','Иронично, да?',1700);
-  await miaWaypoint(2);
+  await miaWalk.waypoint(2);
   await say('mia','Кем ты был? Ну, там, в прошлой жизни?');
   await say('player','Не помню. Работа. Долги. Крыша.');
   await say('mia','Типичный.',1300);
   broadcast('Счастье — это долг каждого гражданина. Улыбайтесь. Мы наблюдаем.');
-  await miaWaypoint(3);
+  await miaWalk.waypoint(3);
   await say('mia','Главное правило: не улыбайся. То есть улыбайся — но понарошку. Чтобы никто не заметил.',4300);
   await say('player','А что будет, если заметят?');
   walkers.forEach(w=>w.active=true);
@@ -1339,54 +1375,65 @@ async function patrolCaught(){
   G.masked=false;document.body.classList.remove('masked');
   $('#maskBtn').classList.remove('act');
   joyFX();
+  /* Мия рядом с игроком после респауна */
+  mia.g.position.set(1.2,0,43.5);mia.g.rotation.set(0,Math.PI,0);
   await fade(0,900);
   G.canMove=true;G.caughtN++;
-  await say('mia',['Так. Ещё раз: увидел жёлтого — маску. Кнопка E.',
+  await say('mia',['Так. Ещё раз: увидел жёлтого — маску. '+
+      (IS_TOUCH?'Кнопка слева.':'Кнопка E.'),
     'Ты вообще слушал?! Жёлтый веер подсвечен. Не лезь туда без маски!',
     'Ладно. Только я тебя снова спасла, имей в виду.'][Math.min(G.caughtN-1,2)],3600);
 }
 async function actPatrol(){
   showWorld(patrolWorld,{fog:0xcdeef2,fogD:.002,clear:0xc9ecf0});
   G.state='PATROL';
+  G.hatchUsed=false;
   placeMia(patrolWorld,V(1.2,0,45.5),Math.PI);
   G.pos.set(0,1.68,44);G.yaw=Math.PI;G.pitch=0;G.joy=100;joyFX();
   $('#joyWrap').classList.add('on');
+  miaFollowMode=true;
   await fade(0,1400);
   await say('narr','Улицы сужаются. Патрулей больше.');
-  miaWalkTo([V(1.2,0,45.5),V(-1,0,38),V(1,0,30),V(-1.4,0,17),V(1.4,0,6),V(-.5,0,-6),V(0,0,-38)]);
   G.canMove=true;
   ctrlTxt(IS_TOUCH?'кнопка МАСКА слева':'E — маска · следи за шкалой радости');
-  const eg=escort(1400,'PATROL');
   await say('mia','Это проверочный район. Здесь ищут «нестабильных».',3200);
   await say('mia','Корректируют. Это не больно. Это… сладко. Розовый дым. А потом ты счастлив. Всегда.',4200);
   await say('player','Звучит как пытка.');
   await say('mia','А это не пытка? Смотреть на них?',2800);
   await say('mia','Попал в жёлтый веер — шкала падает. '+
     (IS_TOUCH?'Жми кнопку маски.':'Жми E — натянуть маску.')+
-    ' В маске падает медленно. Но долго носить нельзя!',5600);
-  await new Promise(r=>{G.patCheck=()=>{if(G.pos.z<26)r();};});
-  await say('mia','Люк в конце улицы. Там наши.',2600);
-  await new Promise(r=>{G.hatchCheck=()=>{
-    if(Math.hypot(G.pos.x,G.pos.z+39)<2.2)r();};});
-  clearInterval(eg);
-  G.canMove=false;miaWait();
-  await say('mia','Вот. Не наступай в ту жижу. Не спрашивай, что это.',3400);
-  showPrompt('F','Спуститься');
-  await awaitChoice('KeyF','спуститься в люк');
-  hidePrompt();
-  AU.thump(.4);AU.splash(.2);
+    ' В маске падает медленно. Но долго носить нельзя!',5200);
+  await new Promise(r=>{G.patCheck=()=>{if(G.pos.z<30)r();};});
+  ctrlTxt('цель: зелёный луч света в конце улицы');
+  await say('mia','Люк в конце улицы — увидишь зелёный столб света. Там наши.',3600);
+  /* ждём люка: подсказка при приближении, авто-спуск на самом люке */
+  let hintShown=false;
+  await new Promise(res=>{
+    const iv=setInterval(()=>{
+      if(G.state!=='PATROL'||G.hatchUsed){clearInterval(iv);res();return;}
+      const d=Math.hypot(G.pos.x,G.pos.z+41);
+      if(d<8&&!hintShown){hintShown=true;
+        showPrompt('▼','встань на люк');AU.chime();}
+      if(d>10&&hintShown&&d>0){hintShown=false;hidePrompt();}
+      if(d<2.4&&!G.hatchUsed){G.hatchUsed=true;clearInterval(iv);hidePrompt();res();}
+    },100);});
+  clearInterval(void 0);
+  G.canMove=false;
+  AU.thump(.45);AU.splash(.25);
+  await say('narr','Скобы уходят вниз. Темно. Пахнет ржавчиной и тушёнкой.',3200);
   await fade(1,900);
 }
 async function actTunnels(){
   showWorld(tunnelWorld,{fog:0x06070a,fogD:.06,clear:0x040507});
   G.state='TUNNEL';
   $('#joyWrap').classList.remove('on');
+  miaFollowMode=false;miaSpd=2.9;
   placeMia(tunnelWorld,V(1,0,-4),Math.PI);
   G.pos.set(0,1.66,0);G.yaw=0;G.pitch=0;
   await fade(0,1400);
   await say('narr','Ржавые скобы. Сырость. Пахнет тушёнкой… и ещё чем-то.',3000);
   G.canMove=true;ctrlTxt('идти за Мией · у дрона — не бежать');
-  miaWalkTo([V(1,0,-4),V(0,0,-14),V(-2,0,-22.8),
+  miaWalk.go([V(1,0,-4),V(0,0,-14),V(-2,0,-22.8),
              V(-6,0,-26.1),V(-17,0,-26.1),V(-20.6,0,-27.8),V(-20.7,0,-39),
              V(-22.5,0,-41)]);
   const eg=escort(1500,'TUNNEL');
@@ -1396,7 +1443,7 @@ async function actTunnels(){
   await new Promise(res=>{
     const iv=setInterval(()=>{
       if(G.state!=='TUNNEL'){clearInterval(iv);return;}
-      if(miaWayIdx>=4){
+      if(miaWalk.idx>=4){
         const d=Math.hypot(G.pos.x-droneRef.position.x,G.pos.z-droneRef.position.z);
         const spd=Math.hypot(G.lastMX,G.lastMZ)/.016;
         if(d<2.6&&spd>3.4&&droneOk){
@@ -1412,9 +1459,9 @@ async function actTunnels(){
     await miaSay('ИНВАЛИД… ПРОШЛИ БЫ ТИХО! Назад. И — МЕДЛЕННО на этот раз.',2400);
     await say('narr','Дрон надрывается где-то позади. Ты идёшь — шаг за шагом.',3000);
   }
-  await miaWaypoint(7);
+  await miaWalk.waypoint(7);
   clearInterval(eg);
-  G.canMove=false;miaWait();
+  G.canMove=false;mia.moving=false;
   if(droneOk)await say('mia','Вот и молодец. Почти как живой человек.',2600);
   await say('narr','Массивная дверь. Нарисованное солнце. Улыбается.',2600);
   AU.thump(.35);await wait(500);AU.thump(.35);await wait(800);AU.thump(.35);
@@ -1495,8 +1542,9 @@ async function actShelter(){
   await wait(900);
   await say('mia','Ищу маму.',2200);
   placeMia(tunnelWorld,V(-33,0,-41),-Math.PI/2);
-  miaWalkTo([V(-33,0,-41),V(-35,0,-43.8)]);
+  miaWalk.go([V(-33,0,-41),V(-35,0,-43.8)]);
   await wait(1200);
+  miaWalk.reset();
   await fade(1,1600);await wait(800);
   G.pos.set(-29,1.66,-38);G.yaw=Math.PI*.2;
   await fade(0,1600);
@@ -1514,17 +1562,18 @@ async function actOuting(){
   await fade(1,800);
   showWorld(outskirtWorld,{fog:0xd4ecf4,fogD:.0018,clear:0xcfeaf0});
   G.state='OUTSK';
+  miaFollowMode=false;miaSpd=3.2;
   G.pos.set(0,1.68,28);G.yaw=Math.PI;G.pitch=0;G.joy=100;joyFX();
   placeMia(outskirtWorld,V(1.4,0,29),Math.PI);
   await fade(0,1300);
   await say('narr','Окраина. Веселье здесь разобрано на запчасти.',3000);
-  miaWalkTo([V(1.4,0,29),V(-1,0,18),V(1.4,0,6),V(-1,0,-8),V(1,0,-22),V(4.6,0,-47.6)]);
+  miaWalk.go([V(1.4,0,29),V(-1,0,18),V(1.4,0,6),V(-1,0,-8),V(1,0,-22),V(4.6,0,-47.6)]);
   G.canMove=true;
-  ctrlTxt(IS_TOUCH?'кнопка МАСКА · F — действие':'E — маска · F — действие');
+  ctrlTxt(IS_TOUCH?'кнопка МАСКА · жёлтые зоны':'E — маска · путь ведёт к складу');
   const og=escort(1400,'OUTSK');
-  await miaWaypoint(5);
+  await miaWalk.waypoint(5);
   clearInterval(og);
-  G.canMove=false;miaWait();
+  G.canMove=false;mia.moving=false;
   await say('mia','Склад. Там Фред спрятал припасы. Вопрос: ты умеешь бегать?',3400);
   await say('player','Умею.');
   await say('mia','Тогда молись, чтобы никто не заметил.',2600);
@@ -1534,8 +1583,8 @@ async function actOuting(){
   if(ok){
     await say('mia','Тупая система, но работает.',2200);
     await whGate.openAnim();}
-  miaWalkTo([V(4.6,0,-47.6),V(8,0,-56),V(11,0,-66)]);
-  miaGo();
+  miaWalk.go([V(4.6,0,-47.6),V(8,0,-56),V(11,0,-66)]);
+  mia.moving=true;
   G.pos.set(6.4,1.68,-52);G.yaw=2.6;G.canMove=true;
   showPrompt('F','Забрать припасы');
   await new Promise(r=>{G.cratesCheck=()=>{
@@ -1559,7 +1608,6 @@ function startChase(){
     const route=[V(11,1.68,-66),V(8,1.68,-58),V(3.4,1.68,-52),V(1.2,1.68,-44),
                  V(-2.5,1.68,-30),V(1,1.68,-16),V(-2.6,1.68,-2),V(-3,1.68,14),V(-3.4,1.68,27)];
     placeMia(outskirtWorld,V(10.2,0,-66),Math.PI*.8);
-    mia.speedBoost=true;
     let lastSplash=0;
     const iv=setInterval(()=>{
       if(G.state!=='CHASE'){clearInterval(iv);return;}
@@ -1613,7 +1661,6 @@ async function actWater(){
   AU.thump(.4);await wait(700);AU.thump(.45);await wait(650);
   await say('mia','Они идут за нами.',2200);
   AU.thump(.5);await wait(500);AU.thump(.5);await wait(450);AU.thump(.55);
-  // луч факела прорезает тьму позади
   await new Promise(res=>{const t0=performance.now();(function bl(){
     const k=Math.min(1,(performance.now()-t0)/900);
     torchBeam.material.opacity=Math.sin(k*Math.PI)*.35;
@@ -1659,7 +1706,6 @@ async function actWater(){
     await say('red','В Центре разговорим.',2400);
     AU.thump(.5);G.shake=1.6;
     await say('mia','Отпусти его!',2000);
-    // через плечо: мир вниз головой, шаги качают кадр
     const steps=setInterval(()=>AU.thump(.42),760);
     await new Promise(res=>{const t1=performance.now();(function carry(){
       const k=Math.min(1,(performance.now()-t1)/4200);
@@ -1784,7 +1830,7 @@ function animate(){
         if(G.masked){G.joy-=dt*4;G.maskT+=dt;
           if(G.maskT>7&&!G.longMaskSaid){G.longMaskSaid=true;
             miaSay('Снимай. Начинаешь думать.',2400);}}
-        else G.joy-=(danger>0?(12+danger*46):dt*2.2);
+        else G.joy-=(danger>0?(10+danger*46):dt*1.6);
         G.catchGlow=danger>0&&!G.masked?danger:0;
         if(G.joy<=0&&!G.patrolBusy){G.joy=0;joyFX();G.patrolBusy=true;
           patrolCaught().then(()=>G.patrolBusy=false);}
@@ -1795,8 +1841,7 @@ function animate(){
       else if(G.state==='OUTSK'){
         if(nz>-50.5){nx=clamp(nx,-4.6,4.6);}
         else{nx=clamp(nx,-0.5,16.5);nz=clamp(nz,-74.5,28);}
-        if(G.cratesCheck)G.cratesCheck();
-        G.joy-=dt*1.1;joyFX();}
+        if(G.cratesCheck)G.cratesCheck();}
       else if(G.state==='WATER'){
         nx=clamp(nx,-1.9,1.9);nz=clamp(nz,-9.5,4);
         if(Math.random()<dt*2.2)AU.splash(.06);}
@@ -1833,11 +1878,17 @@ function animate(){
     camera.rotation.z+=rnd(-1,1)*.006*G.shake;}
   $('#catchFlash').style.opacity=(G.catchGlow||0)*(G.state==='PATROL'?.85:0);
 
-  // кнопка маски
   $('#maskBtn').style.display=
     (IS_TOUCH&&['PATROL','OUTSK'].includes(G.state)&&G.canMove)?'block':'none';
 
-  /* ------ анимации миров ------ */
+  function tickWalkAnim(h,dt2,rate=9){
+    if(h.moving){h.walkT+=dt2*rate;
+      h.legL.rotation.x=Math.sin(h.walkT)*.55;
+      h.legR.rotation.x=-Math.sin(h.walkT)*.55;
+      h.armL.rotation.x=-Math.sin(h.walkT)*.3;
+      h.g.position.y=Math.abs(Math.sin(h.walkT))*.045;}
+    else{h.legL.rotation.x*=.9;h.legR.rotation.x*=.9;}}
+
   if(roofWorld.visible){
     const cars=roofWorld.userData.cars,cm=roofWorld.userData.carsIM;
     cars.forEach((c,i)=>{c.t+=c.v*dt;if(c.t>210)c.t=-210;if(c.t<-210)c.t=210;
@@ -1853,15 +1904,6 @@ function animate(){
       tmpO.updateMatrix();pm.setMatrixAt(i,tmpO.matrix);});
     pm.instanceMatrix.needsUpdate=true;}
 
-  function tickWalkAnim(h,dt2,rate=9,boost=1){
-    if(h.moving){h.walkT+=dt2*rate*boost;
-      h.legL.rotation.x=Math.sin(h.walkT)*.55;
-      h.legR.rotation.x=-Math.sin(h.walkT)*.55;
-      h.armL.rotation.x=-Math.sin(h.walkT)*.3;
-      h.g.position.y=Math.abs(Math.sin(h.walkT))*.045;}
-    else{h.legL.rotation.x*=.9;h.legR.rotation.x*=.9;}}
-
-  if(voidWorld.visible){}
   if(candyWorld.visible){
     crowd.forEach(c=>{
       if(c.balloon){
@@ -1878,10 +1920,17 @@ function animate(){
       w.obj.g.rotation.y=Math.atan2(w.b.x-w.a.x,w.b.z-w.a.z);
       w.obj.legL.rotation.x=Math.sin(w.t*22)*.6;
       w.obj.legR.rotation.x=-Math.sin(w.t*22)*.6;});
-    miaTick(dt);tickWalkAnim(mia,dt);
+    miaWalk.tick(dt);tickWalkAnim(mia,dt);
     smokeStep(dt);}
 
   if(patrolWorld.visible){
+    /* маяк люка дышит */
+    const bc=patrolWorld.userData;
+    if(bc.beacon){
+      bc.beacon.material.opacity=.09+Math.abs(Math.sin(t*1.7))*.1;
+      bc.glowRing.material.opacity=.5+Math.abs(Math.sin(t*2.2))*.4;
+      bc.glowRing.scale.setScalar(1+Math.sin(t*2.2)*.1);
+      bc.beaconLight.intensity=.6+Math.abs(Math.sin(t*1.7))*.6;}
     pats.forEach(p=>{
       p.t+=p.speed*p.dir*dt/p.a.distanceTo(p.b);
       if(p.t>=1){p.t=1;p.dir=-1;}if(p.t<=0){p.t=0;p.dir=1;}
@@ -1890,7 +1939,9 @@ function animate(){
       p.obj.g.rotation.y=Math.atan2(fx,fz);
       p.obj.legL.rotation.x=Math.sin(p.t*30)*.5;
       p.obj.legR.rotation.x=-Math.sin(p.t*30)*.5;});
-    miaTick(dt);tickWalkAnim(mia,dt);
+    /* Мия идёт СЛЕДОМ за игроком — не может застрять */
+    if(G.state==='PATROL'&&miaFollowMode)miaWalk.follow(dt,{behind:1.9});
+    else miaWalk.tick(dt),tickWalkAnim(mia,dt);
     smokeStep(dt);}
 
   if(tunnelWorld.visible){
@@ -1909,10 +1960,10 @@ function animate(){
     if(dustP){const pa=dustP.geometry.attributes.position;
       for(let i=0;i<pa.count;i++){let y=pa.getY(i)+dt*.5;if(y>3.1)y=2.1;pa.setY(i,y);}
       pa.needsUpdate=true;}
-    miaTick(dt);tickWalkAnim(mia,dt);}
+    miaWalk.tick(dt);tickWalkAnim(mia,dt);}
 
   if(outskirtWorld.visible){
-    miaTick(dt);tickWalkAnim(mia,dt,9,mia.speedBoost?1.45:1);}
+    miaWalk.tick(dt);tickWalkAnim(mia,dt,9);}
 
   if(waterWorld.visible){
     waterMesh.position.y=.32+Math.sin(t*1.2)*.015;}
