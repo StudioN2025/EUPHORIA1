@@ -190,7 +190,7 @@ const IS_TOUCH=
   ||/Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile/i.test(UA)
   ||(navigator.maxTouchPoints>1&&/Macintosh/.test(UA));
 
-/* ===== СЛУЖЕБНЫЕ ФУНКЦИИ UI (объявлены РАНО — до всех использований) ===== */
+/* ===== СЛУЖЕБНЫЕ UI-ФУНКЦИИ (объявлены РАНО — до всех использований) ===== */
 function checkRot(){
   const on=IS_TOUCH&&innerHeight>innerWidth&&G.state!=='MENU'&&G.state!=='END';
   $('#rotHint').classList.toggle('on',on);}
@@ -749,13 +749,11 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
     m.position.set(x,y,z);m.receiveShadow=true;tunnelWorld.add(m);return m;};
   const mkF=(w,d,x,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,.2,d),floorM);
     m.position.set(x,-.1,z);m.receiveShadow=true;tunnelWorld.add(m);};
-  /* коридор: x∈[-1.7,1.7], z∈[3,-46] */
   mkF(3.4,49,0,-21.5);
   mk(3.4,.2,49,0,2.7,-21.5);
   mk(.3,2.7,49,-1.85,1.35,-21.5);
   mk(.3,2.7,49,1.85,1.35,-21.5);
   mk(3.4,2.7,.3,0,1.35,3.15);
-  /* комната убежища: x∈[-9,3], z∈[-46.6,-56] */
   mkF(12,9.4,-3,-51.3);
   mk(12,.2,9.4,-3,3,-51.3);
   mk(.3,3,9.4,-9.15,1.5,-51.3);
@@ -763,7 +761,6 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   mk(12,3,.3,-3,1.5,-56.15);
   mk(7.3,3,.3,-5.35,1.5,-46.45);
   mk(1.3,3,.3,2.35,1.5,-46.45);
-  /* дверь с солнцем */
   const doorPivot=new THREE.Group();doorPivot.position.set(0,0,-46.3);
   const doorMesh=new THREE.Mesh(new THREE.CylinderGeometry(1.45,1.45,.18,26),
     new THREE.MeshStandardMaterial({map:sunDoorTex(),roughness:.8,metalness:.3}));
@@ -781,11 +778,9 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
         dg.rotation.y=k*k*-1.9;k<1?requestAnimationFrame(sw):res();})();})};
   tunnelWorld.userData.doorOpen=false;
   tunnelWorld.userData.doorGlow=doorGlow;
-  /* синяя полоса-путеводитель */
   const guide=new THREE.Mesh(new THREE.BoxGeometry(.5,.03,48),
     new THREE.MeshBasicMaterial({color:0x2b8bd8,transparent:true,opacity:.3}));
   guide.position.set(0,.02,-20.5);tunnelWorld.add(guide);
-  /* дрон-клоун (слева у стены, спит) */
   droneRef=new THREE.Group();
   const ball=new THREE.Mesh(new THREE.SphereGeometry(.45,18,14),
     new THREE.MeshStandardMaterial({color:0xf2ede2,roughness:.35}));
@@ -808,7 +803,6 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   droneRef.userData={beacon:beaconL,alert:0,baseY:2.05};
   droneRef.position.set(-1.05,2.05,-18);
   tunnelWorld.add(droneRef);
-  /* труба с паром */
   const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,22,10),
     new THREE.MeshStandardMaterial({color:0x5d6b5a,roughness:.6,metalness:.4}));
   pipe.rotation.x=Math.PI/2;pipe.position.set(1.35,2.45,-14);tunnelWorld.add(pipe);
@@ -821,13 +815,11 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   steamG.setAttribute('position',new THREE.BufferAttribute(sp,3));
   dustP=new THREE.Points(steamG,new THREE.PointsMaterial({size:.5,map:tx(pc),transparent:true,opacity:.4,depthWrite:false}));
   tunnelWorld.add(dustP);
-  /* аварийные лампы */
   [[0,2.35,-8],[0,2.35,-30],[0,2.3,-43.5]].forEach(([lx,ly,lz])=>{
     const em=new THREE.Mesh(new THREE.BoxGeometry(.25,.1,.1),new THREE.MeshBasicMaterial({color:0x87ffa0}));
     em.position.set(lx,ly,lz);tunnelWorld.add(em);
     const el=new THREE.PointLight(0x77ffaa,.3,7);el.position.set(lx,ly-.3,lz);
     tunnelWorld.add(el);bulbs.push({lamp:el,base:.3,flick:true});});
-  /* УБЕЖИЩЕ */
   const wire=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,1.1,6),new THREE.MeshStandardMaterial({color:0x333333}));
   wire.position.set(-4.5,2.85,-51);tunnelWorld.add(wire);
   const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,10,10),new THREE.MeshBasicMaterial({color:0xffe8b0}));
@@ -899,7 +891,6 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   wrench.position.set(0,-.62,.03);maruObj.armR.add(wrench);
   tunnelWorld.add(maruObj.g);
 })();
-/* Коллизии тоннелей. Дверь закрыта → дальше -45.6 не пройти. */
 function tunnelClamp(nx,nz){
   const m=.38,TW=tunnelWorld.userData;
   if(!TW.doorOpen){
@@ -958,11 +949,12 @@ let whGate=null;
   const gm=new THREE.Mesh(new THREE.CircleGeometry(.5,20),new THREE.MeshBasicMaterial({map:smileBadgeTex(),transparent:true}));
   gm.position.set(0,4.2,.4);gate.add(gm);
   gate.position.set(8,0,-50.4);outskirtWorld.add(gate);
-  whGate={group:gate,left:gl,right:gr2,
+  whGate={group:gate,left:gl,right:gr2,open:false,
     openAnim:()=>new Promise(res=>{AU.creak();const t0=performance.now();
       (function up(){const k=Math.min(1,(performance.now()-t0)/1400);
         gl.position.y=3.2+k*k*5.6;gr2.position.y=3.2+k*k*5.6;
-        k<1?requestAnimationFrame(up):res();})();})};
+        k<1?requestAnimationFrame(up):(whGate.open=true,res());})();})};
+  /* панель у ворот */
   const bpole=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,1.3,8),
     new THREE.MeshStandardMaterial({color:0x555555,metalness:.5}));
   bpole.position.set(5.6,.65,-49.6);outskirtWorld.add(bpole);
@@ -970,6 +962,29 @@ let whGate=null;
   scr.position.set(5.6,1.5,-49.6);scr.rotation.y=Math.PI;outskirtWorld.add(scr);
   const eye=new THREE.Mesh(new THREE.CircleGeometry(.09,12),new THREE.MeshBasicMaterial({color:0x7dff9a}));
   eye.position.set(5.6,1.5,-49.53);eye.rotation.y=Math.PI;outskirtWorld.add(eye);
+  /* ИСПРАВЛЕНО: зона панели — зелёное кольцо + маяк (видно издалека) */
+  const panelRing=new THREE.Mesh(new THREE.RingGeometry(1.8,2.8,40),
+    new THREE.MeshBasicMaterial({color:0x9df7b4,transparent:true,opacity:.16,
+      side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+  panelRing.rotation.x=-Math.PI/2;panelRing.position.set(5.6,.14,-49.6);outskirtWorld.add(panelRing);
+  const panelBeam=new THREE.Mesh(new THREE.CylinderGeometry(.7,1,26,16,1,true),
+    new THREE.MeshBasicMaterial({color:0xaef7c0,transparent:true,opacity:.12,
+      side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+  panelBeam.position.set(5.6,13,-49.6);outskirtWorld.add(panelBeam);
+  const panelLight=new THREE.PointLight(0x9df7b4,.7,9);
+  panelLight.position.set(5.6,1.8,-49.6);outskirtWorld.add(panelLight);
+  /* маяк припасов во дворе */
+  const crateRing=new THREE.Mesh(new THREE.RingGeometry(1.6,2.6,40),
+    new THREE.MeshBasicMaterial({color:0x7fc8ff,transparent:true,opacity:.18,
+      side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+  crateRing.rotation.x=-Math.PI/2;crateRing.position.set(11,.14,-66);outskirtWorld.add(crateRing);
+  const crateBeam=new THREE.Mesh(new THREE.CylinderGeometry(.6,.9,20,16,1,true),
+    new THREE.MeshBasicMaterial({color:0x9fd8ff,transparent:true,opacity:.12,
+      side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+  crateBeam.position.set(11,10,-66);outskirtWorld.add(crateBeam);
+  outskirtWorld.userData.panelRing=panelRing;outskirtWorld.userData.panelBeam=panelBeam;
+  outskirtWorld.userData.panelLight=panelLight;
+  outskirtWorld.userData.crateRing=crateRing;outskirtWorld.userData.crateBeam=crateBeam;
   const wood=new THREE.MeshStandardMaterial({color:0x8a6f4d,roughness:.9});
   for(let i=0;i<10;i++){const bx=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),wood);
     bx.position.set(rnd(2,14.5),.5,-72+(i%4)*4.4+rnd(-1,1));
@@ -992,6 +1007,21 @@ let whGate=null;
   spot.visible=false;outskirtWorld.add(spot);outskirtWorld.add(spot.target);
   outskirtWorld.userData.spot=spot;outskirtWorld.userData.spotCone=spotCone;
 })();
+/* ИСПРАВЛЕНО: коллизии окраины. Улица вся достижима (x до 6.5),
+   двор закрыт до взлома, после — проход строго через проём ворот. */
+function outskirtClamp(nx,nz){
+  const open=!!(whGate&&whGate.open);
+  if(!open) return [clamp(nx,-6.5,6.5), Math.max(nz,-48.6)];
+  /* ворота открыты */
+  if(nz>-48.6) return [clamp(nx,-6.5,6.5), nz];            /* улица */
+  const inGap=nx>4.2&&nx<11.8;
+  if(nz>-51.2){                                              /* полоса ворот */
+    if(inGap) return [clamp(nx,4.2,11.8), clamp(nz,-51.2,-48.6)];
+    if(nz<-50.4) return [clamp(nx,-0.3,16.7), Math.min(nz,-50.8)]; /* изнутри упёрся в фасад */
+    return [clamp(nx,-6.5,6.5), -48.6];                      /* снаружи упёрся в фасад */
+  }
+  return [clamp(nx,-0.3,16.7), clamp(nz,-74.7,-50.8)];       /* двор */
+}
 
 /* ============== МИР 7: ЗАТОПЛЕННЫЙ ТОННЕЛЬ ======================== */
 const waterWorld=new THREE.Group();scene.add(waterWorld);waterWorld.visible=false;
@@ -1052,6 +1082,7 @@ const G={
   subTO:0,branch:'',playerName:'',lastMX:0,lastMZ:0,lastTap:'',
   chaseDist:0,chaseActive:false,patrolBusy:false,catchGlow:0,
   hatchUsed:false,hatchReady:false,lidT:0,
+  panelReady:false,panelDone:false,
 };
 
 /* =========================== ВВОД ================================= */
@@ -1060,6 +1091,7 @@ function setEReady(on){$('#kbE').classList.toggle('ready',!!on);}
 function pressE(){
   if(G.state==='PATROL'&&!G.hatchUsed&&G.canMove&&
      Math.hypot(G.pos.x,G.pos.z+41)<4.5){tryHatch();return;}
+  if(G.state==='OUTSK'&&G.panelReady&&G.canMove){tryHackPanel();return;}
   if(G.keyHandler){G.keyHandler('KeyE');return;}
 }
 function pressQ(){
@@ -1234,7 +1266,6 @@ function escort(interval,stateName){
       say('mia',['Эй. Ноги. Двигай.','Не стой столбом.','Куда понёс? Сюда надо.',
         'Слушай меня хоть иногда.'][G.caughtN%4],2200);}
   },interval);return iv;}
-/* watchdog: Мия с незавершённым маршрутом не имеет права стоять */
 setInterval(()=>{
   if(!['CANDY','TUNNEL','OUTSK'].includes(G.state))return;
   if(walkerPaused)return;
@@ -1523,7 +1554,6 @@ async function actPatrol(){
   await waitCond(()=>G.pos.z<30);
   ctrlTxt('цель: зелёный луч света в конце улицы');
   await say('mia','Люк в конце улицы — зелёный столб света. Войдёшь в кольцо — жми E. Или просто постой на самой крышке.',4600);
-  /* вотчер зоны — только подсветка. Спуск целиком в tryHatch. */
   const zoneIv=setInterval(()=>{
     if(G.state!=='PATROL'||G.hatchUsed){clearInterval(zoneIv);return;}
     const d=Math.hypot(G.pos.x,G.pos.z+41);
@@ -1535,11 +1565,9 @@ async function actPatrol(){
     }else if(d>=5.2&&G.hatchReady){
       G.hatchReady=false;setEReady(false);hidePrompt();}
   },80);
-  /* сценарий мирно ждёт, пока tryHatch сам не запустит тоннели */
   await waitCond(()=>G.state==='TUNNEL',200);
   clearInterval(zoneIv);
 }
-/* ===== САМОДОСТАТОЧНЫЙ ПЕРЕХОД: нажал E → сам сменил мир → сам запустил сцену ===== */
 let hatchBusy=false;
 function tryHatch(){
   if(hatchBusy)return;
@@ -1553,7 +1581,6 @@ function tryHatch(){
   (async()=>{
     await say('narr','Скобы уходят вниз. Темно. Пахнет ржавчиной и тушёнкой.',2400);
     await fade(1,700);
-    /* === СМЕНА МИРА ПРЯМО ЗДЕСЬ === */
     showWorld(tunnelWorld,{fog:0x06070a,fogD:.05,clear:0x040507});
     G.state='TUNNEL';
     $('#joyWrap').classList.remove('on');
@@ -1563,7 +1590,6 @@ function tryHatch(){
     G.pos.set(0,1.66,-1.5);G.yaw=0;G.pitch=0;
     await fade(0,1200);
     log('tunnels: мир показан');
-    /* сцена тоннелей живёт отдельным потоком */
     tunnelScene();
   })();
 }
@@ -1595,7 +1621,6 @@ async function tunnelScene(){
       })();
     }
   },120);
-  /* ждём: Мия у двери ИЛИ игрок сам дошёл до двери */
   await waitCond(()=>miaWalk.idx>=8||G.pos.z<-44.4,150);
   clearInterval(droneIv);
   clearInterval(eg);
@@ -1707,29 +1732,65 @@ async function outingScene(){
   showWorld(outskirtWorld,{fog:0xd4ecf4,fogD:.0018,clear:0xcfeaf0});
   G.state='OUTSK';
   miaFollowMode=false;miaSpd=3.2;
+  G.panelDone=false;G.panelReady=false;setEReady(false);
   G.pos.set(0,1.68,28);G.yaw=Math.PI;G.pitch=0;G.joy=100;joyFX();
   placeMia(outskirtWorld,V(1.4,0,29),Math.PI);
   await fade(0,1300);
   await say('narr','Окраина. Веселье здесь разобрано на запчасти.',3000);
-  miaWalk.go([V(1.4,0,29),V(-1,0,18),V(1.4,0,6),V(-1,0,-8),V(1,0,-22),V(4.6,0,-47.6)]);
+  miaWalk.go([V(1.4,0,29),V(-1,0,18),V(1.4,0,6),V(-1,0,-8),V(1,0,-22),V(3.2,0,-46.5)]);
   G.canMove=true;
-  ctrlTxt(IS_TOUCH?'кнопки справа · путь к складу':'Q — маска · путь ведёт к складу');
+  ctrlTxt('цель: зелёное кольцо у ворот склада');
   const og=escort(1400,'OUTSK');
   await miaWalk.waypoint(5);
   clearInterval(og);
-  G.canMove=false;mia.moving=false;
-  await say('mia','Склад. Там Фред спрятал припасы. Вопрос: ты умеешь бегать?',3400);
-  await say('player','Умею.');
-  await say('mia','Тогда молись, чтобы никто не заметил.',2600);
-  await awaitChoice('KeyF','взломать панель');
-  const ok=await hackGame();
-  if(ok){
+  await say('mia','Склад. Припасы Фреда — внутри, за воротами. А вход — через панель у столбика.',3800);
+  await say('mia','Подойди к панели — зелёное кольцо — и жми '+(IS_TOUCH?'кнопку E справа':'E')+'.',3600);
+  ctrlTxt('подойди к панели у ворот — жми E');
+  /* зона панели: как у люка — подошёл, подсказка, E */
+  const pzIv=setInterval(()=>{
+    if(G.state!=='OUTSK'||G.panelDone){clearInterval(pzIv);return;}
+    const d=Math.hypot(G.pos.x-5.6,G.pos.z+49.6);
+    if(d<2.8&&!G.panelReady){
+      G.panelReady=true;
+      showPrompt('E',IS_TOUCH?'жми E справа — взлом':'Взломать панель');
+      setEReady(true);AU.chime();
+      log('panel: зона активна');
+    }else if(d>=3.6&&G.panelReady){
+      G.panelReady=false;setEReady(false);hidePrompt();}
+  },80);
+  await waitCond(()=>G.panelDone,200);
+  clearInterval(pzIv);
+}
+/* ===== САМОДОСТАТОЧНЫЙ ВЗЛОМ ПАНЕЛИ: E → мини-игра → ворота → двор ===== */
+let panelBusy=false;
+function tryHackPanel(){
+  if(panelBusy)return;
+  if(G.state!=='OUTSK'||!G.panelReady||!G.canMove)return;
+  panelBusy=true;
+  G.panelReady=false;setEReady(false);hidePrompt();
+  G.canMove=false;
+  log('panel: взлом запущен');
+  (async()=>{
+    await hackGame();
     await say('mia','Тупая система, но работает.',2200);
-    await whGate.openAnim();}
-  miaWalk.go([V(4.6,0,-47.6),V(8,0,-56),V(11,0,-66)]);
-  mia.moving=true;
-  G.pos.set(6.4,1.68,-52);G.yaw=2.6;G.canMove=true;
-  await waitCond(()=>Math.hypot(G.pos.x-11,G.pos.z+66)<2.4);
+    log('panel: открываю ворота');
+    await whGate.openAnim();
+    await say('narr','Ворота со скрежетом ползут вверх.',2400);
+    G.panelDone=true;
+    panelBusy=false;
+    log('panel: ворота открыты');
+    yardScene();
+  })();
+}
+async function yardScene(){
+  log('act: yard');
+  miaFollowMode=false;miaSpd=3.4;
+  miaWalk.go([V(6,0,-53),V(9,0,-58),V(11,0,-65)]);
+  G.canMove=true;
+  ctrlTxt('во двор склада — голубое кольцо у ящиков');
+  await say('mia','Двор чистый. Припасы в глубине — там голубое кольцо.',3400);
+  await waitCond(()=>Math.hypot(G.pos.x-11,G.pos.z+66)<2.6,150);
+  G.canMove=false;
   AU.thump(.3);
   await say('player','Есть. Тяжёлые.',2200);
   const{spot,spotCone}=outskirtWorld.userData;
@@ -1913,8 +1974,9 @@ async function scriptMain(){
     await actVoid();
     await actCandy();
     await actPatrol();
-    /* дальше сценарий продолжают самостоятельные потоки:
-       tryHatch → tunnelScene → shelterScene → outingScene → waterScene → postCredits */
+    /* дальше — самостоятельные потоки:
+       tryHatch → tunnelScene → shelterScene → outingScene
+       → (зона панели) tryHackPanel → yardScene → startChase → waterScene → postCredits */
   }catch(err){
     console.error(err);
   }
@@ -1971,7 +2033,6 @@ function animate(){
         if(G.joy<=0&&!G.patrolBusy){G.joy=0;joyFX();G.patrolBusy=true;
           patrolCaught().then(()=>G.patrolBusy=false);}
         joyFX();
-        /* автоспуск: стоишь на самой крышке ~0.9 сек — спуск сам */
         if(!G.hatchUsed){
           const hd=Math.hypot(nx,nz+41);
           if(hd<1.5){G.lidT+=dt;if(G.lidT>.9){log('hatch: автоспуск с крышки');tryHatch();}}
@@ -1981,8 +2042,8 @@ function animate(){
         const[tx,tz]=tunnelClamp(nx,nz);
         nx=tx;nz=tz;}
       else if(G.state==='OUTSK'){
-        if(nz>-50.5){nx=clamp(nx,-4.6,4.6);}
-        else{nx=clamp(nx,-0.5,16.5);nz=clamp(nz,-74.5,28);}}
+        const[ox,oz]=outskirtClamp(nx,nz);
+        nx=ox;nz=oz;}
       else if(G.state==='WATER'){
         nx=clamp(nx,-1.9,1.9);nz=clamp(nz,-9.5,4);
         if(Math.random()<dt*2.2)AU.splash(.06);}
@@ -2107,7 +2168,14 @@ function animate(){
     miaWalk.tick(dt);tickWalkAnim(mia,dt);}
 
   if(outskirtWorld.visible){
-    miaWalk.tick(dt);tickWalkAnim(mia,dt,9);}
+    miaWalk.tick(dt);tickWalkAnim(mia,dt,9);
+    const od=outskirtWorld.userData;
+    if(od.panelRing){
+      od.panelRing.material.opacity=G.panelReady?.3+Math.abs(Math.sin(t*4))*.2:.14;
+      od.panelBeam.material.opacity=.09+Math.abs(Math.sin(t*1.7))*.06;
+      od.panelLight.intensity=.5+Math.abs(Math.sin(t*1.7))*.4;
+      od.crateRing.material.opacity=.15+Math.abs(Math.sin(t*2.2))*.12;
+      od.crateBeam.material.opacity=.09+Math.abs(Math.sin(t*1.4))*.06;}}
 
   if(waterWorld.visible){
     waterMesh.position.y=.32+Math.sin(t*1.2)*.015;}
