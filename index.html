@@ -104,7 +104,7 @@
   .hbtn.lit{transform:scale(1.18);border-color:#fff;box-shadow:0 0 18px currentColor}
   #hackMsg{margin-top:12px;font-family:'JetBrains Mono';font-size:11px;letter-spacing:.2em;color:#6a8f6a;text-transform:uppercase}
 
-  /* ===== ПОСТОЯННЫЕ КНОПКИ E / Q ===== */
+  /* ===== КНОПКИ E / Q ===== */
   #keyBtns{position:fixed;right:16px;bottom:calc(9vh + 26px);z-index:34;display:none;gap:14px;pointer-events:auto}
   #keyBtns.on{display:flex}
   .kbtn{width:66px;height:66px;border-radius:50%;border:2px solid rgba(255,255,255,.8);
@@ -112,7 +112,6 @@
         font-size:24px;cursor:pointer;touch-action:manipulation;
         transition:background .1s,color .1s,box-shadow .2s,border-color .2s}
   .kbtn:active{background:rgba(255,255,255,.92);color:#000;transform:scale(.94)}
-  /* подсветка «действие доступно» */
   .kbtn.ready{border-color:#9df7b4;color:#c9ffd6;
     box-shadow:0 0 16px rgba(157,247,180,.65);animation:readyPulse 1.1s ease-in-out infinite}
   @keyframes readyPulse{0%,100%{box-shadow:0 0 10px rgba(157,247,180,.45)}50%{box-shadow:0 0 22px rgba(157,247,180,.9)}}
@@ -124,13 +123,11 @@
          pointer-events:auto;touch-action:manipulation}
   #fsBtn:active{background:rgba(255,255,255,.85);color:#000}
 
-  /* ===== ТОСТ ===== */
   #toast{position:fixed;top:calc(9vh + 60px);left:50%;transform:translateX(-50%);z-index:60;
          display:none;max-width:min(520px,90vw);background:rgba(12,14,18,.94);
          border:1px solid rgba(255,255,255,.35);color:#f2f0ea;font-size:13px;line-height:1.5;
          padding:12px 16px;border-radius:10px;text-align:center;pointer-events:auto}
   #toast.on{display:block}
-  #toast a{color:#8fd3ff;text-decoration:underline}
 
   #rotHint{position:fixed;top:calc(9vh + 12px);left:50%;transform:translateX(-50%);z-index:35;display:none;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.3);color:#e8e6e1;font-size:11px;letter-spacing:.2em;padding:8px 14px;text-transform:uppercase;border-radius:6px;pointer-events:none}
   #rotHint.on{display:block}
@@ -179,6 +176,18 @@ const $=s=>document.querySelector(s);
 const V=(x,y,z)=>new THREE.Vector3(x,y,z);
 const lerp=(a,b,t)=>a+(b-a)*t,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const log=m=>console.log('[EUPHORIA]',m);
+
+/* Самостоятельный чекпоинт: опрашивает условие сам, ничего не ждёт из цикла */
+function waitCond(fn,poll=120){
+  return new Promise(res=>{
+    const iv=setInterval(()=>{
+      let ok=false;
+      try{ok=fn();}catch(e){ok=false;}
+      if(ok){clearInterval(iv);res();}
+    },poll);
+  });
+}
 
 const UA=navigator.userAgent||'';
 const IS_TOUCH=
@@ -212,7 +221,6 @@ async function enterFS(){
   if(!fn)throw new Error('unsupported');
   const res=fn.call(el,{navigationUI:'hide'});
   if(res&&typeof res.catch==='function')await res;
-  /* iOS-фиксация ориентации, где доступна */
   try{
     if(screen.orientation&&screen.orientation.lock)
       await screen.orientation.lock('landscape');
@@ -228,9 +236,7 @@ async function toggleFS(){
     if(!isFS()){await enterFS();}
     else{exitFS();}
   }catch(err){
-    /* Встроенные окна/iframe без allowfullscreen отклоняют фуллскрин —
-       объясняем пользователю вместо молчаливого отказа. */
-    toast('Полный экран заблокирован этим окном.<br>Открой игру в <a href="javascript:location.reload()" target="_self">отдельной вкладке</a> или добавь страницу на главный экран — тогда кнопка сработает.',5200);
+    toast('Полный экран заблокирован этим окном.<br>Открой файл напрямую во вкладке браузера — там кнопка сработает.',5200);
   }
   fsIcon();
 }
@@ -699,13 +705,12 @@ const pats=[];
     b.position.set(side*(11+w/2),h/2-.1,z);b.castShadow=b.receiveShadow=true;patrolWorld.add(b);}
   for(let i=0;i<8;i++){const a=new THREE.Mesh(new THREE.TorusGeometry(.5,.07,6,20),mat(P[i%6]));
     a.position.set(rnd(-4,4),rnd(5,7),40-i*11);patrolWorld.add(a);}
-  /* люк + маяк + подсветка зоны входа */
+  /* люк + маяк + светлая зона действия (радиус 4.5) */
   const hatchRing=new THREE.Mesh(new THREE.TorusGeometry(1.05,.14,8,24),mat('#4c4741',.8));
   hatchRing.rotation.x=-Math.PI/2;hatchRing.position.set(0,.12,-41);patrolWorld.add(hatchRing);
   const hatchDark=new THREE.Mesh(new THREE.CircleGeometry(1,24),new THREE.MeshBasicMaterial({color:0x02120a}));
   hatchDark.rotation.x=-Math.PI/2;hatchDark.position.set(0,.125,-41);patrolWorld.add(hatchDark);
-  /* светлая «зона действия» — видно, где E работает */
-  const zone=new THREE.Mesh(new THREE.RingGeometry(2.2,3.4,36),
+  const zone=new THREE.Mesh(new THREE.RingGeometry(2.6,4.5,40),
     new THREE.MeshBasicMaterial({color:0x9df7b4,transparent:true,opacity:.16,
       side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
   zone.rotation.x=-Math.PI/2;zone.position.set(0,.13,-41);patrolWorld.add(zone);
@@ -1045,26 +1050,25 @@ const G={
   fall:{v:0,roll:0,pitch:0},menuT:0,camO:false,
   joy:100,masked:false,maskT:0,caughtN:0,longMaskSaid:false,
   subTO:0,branch:'',playerName:'',lastMX:0,lastMZ:0,lastTap:'',
-  chaseDist:0,chaseActive:false,cratesGrabbed:false,patrolBusy:false,catchGlow:0,
-  hatchUsed:false,hatchReady:false,hatchResolve:null,
+  chaseDist:0,chaseActive:false,patrolBusy:false,catchGlow:0,
+  hatchUsed:false,hatchReady:false,
 };
 
 /* =========================== ВВОД ================================= */
 const keys={};
 
-/* --- единые действия E и Q (клавиатура + экранные кнопки) --- */
 function setEReady(on){$('#kbE').classList.toggle('ready',!!on);}
+
+/* --- единые действия E и Q --- */
 function pressE(){
-  /* 1) люк: в зоне — всегда спускаем */
-  if(G.state==='PATROL'&&G.hatchReady&&!G.hatchUsed&&G.canMove){tryHatch();return;}
-  /* 2) активный диалог/выбор */
-  if(G.keyHandler){G.keyHandler('KeyE');return;}
-  /* 3) страховка: если стоишь на люке, но флаг почему-то сброшен */
+  /* люк: в зоне — спускаем (проверяем ДО всего остального) */
   if(G.state==='PATROL'&&!G.hatchUsed&&G.canMove&&
-     Math.hypot(G.pos.x,G.pos.z+41)<3.4){tryHatch();return;}
+     Math.hypot(G.pos.x,G.pos.z+41)<4.5){tryHatch();return;}
+  /* активный выбор/действие */
+  if(G.keyHandler){G.keyHandler('KeyE');return;}
 }
 function pressQ(){
-  if(['PATROL','OUTSK'].includes(G.state)&&G.canMove&&!G.maskLock)toggleMask();
+  if(['PATROL','OUTSK'].includes(G.state)&&G.canMove)toggleMask();
   if(G.keyHandler)G.keyHandler('KeyQ');
 }
 
@@ -1078,7 +1082,7 @@ addEventListener('keydown',e=>{
   if(!['KeyE','KeyQ','KeyM'].includes(e.code)&&G.keyHandler)G.keyHandler(e.code);});
 addEventListener('keyup',e=>keys[e.code]=false);
 
-/* экранные кнопки — мгновенный pointerdown, дубли защищены */
+/* экранные кнопки E/Q — мгновенный pointerdown с защитой от дублей */
 function bindKeyBtn(el,fn){
   let lastTap=0;
   el.addEventListener('pointerdown',e=>{
@@ -1092,7 +1096,6 @@ function bindKeyBtn(el,fn){
 bindKeyBtn($('#kbE'),pressE);
 bindKeyBtn($('#kbQ'),pressQ);
 
-/* фуллскрин-кнопка тоже на pointerdown */
  $('#fsBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();toggleFS();});
 
 const canvas=renderer.domElement;
@@ -1162,17 +1165,21 @@ function showPrompt(key,label){$('#promptText').textContent=label;
   $('#prompt b').textContent=key;$('#prompt').classList.add('on');}
 function hidePrompt(){$('#prompt').classList.remove('on');}
 
+/* Выбор: E — «подтвердить» (универсально, заменяет и F), Q — «второй вариант».
+   Работает и с клавиатуры, и с экранных кнопок. */
 function awaitChoice(keyMain,labelMain,extra){
   return new Promise(res=>{
     let done=false;
     const finish=c=>{if(done)return;done=true;
       G.keyHandler=null;hidePrompt();res(c);};
     G.keyHandler=c=>{
-      if(c===keyMain)finish('main');
-      else if(extra&&c===extra.key)finish('alt');};
-    $('#prompt b').textContent=keyMain.replace('Key','');
+      if(c===keyMain||c==='KeyE')finish('main');
+      else if(extra&&(c===extra.key||c==='KeyQ'))finish('alt');};
+    const kd=IS_TOUCH?'E':keyMain.replace('Key','');
+    const ka=extra?(IS_TOUCH?'Q':extra.key.replace('Key','')):'';
+    $('#prompt b').textContent=kd;
     $('#promptText').innerHTML=labelMain+
-      (extra?`&nbsp;&nbsp;·&nbsp;&nbsp;<b style="margin-left:6px">${extra.key.replace('Key','')}</b>${extra.label}`:'');
+      (extra?`&nbsp;&nbsp;·&nbsp;&nbsp;<b style="margin-left:6px">${ka}</b>${extra.label}`:'');
     $('#prompt').classList.add('on');
   });
 }
@@ -1194,9 +1201,9 @@ function tryHatch(){
   if(G.state!=='PATROL'||G.hatchUsed||!G.canMove)return;
   G.hatchUsed=true;G.hatchReady=false;
   setEReady(false);hidePrompt();
-  AU.thump(.45);
-  const r=G.hatchResolve;G.hatchResolve=null;
-  r&&r();}
+  AU.thump(.45);AU.splash(.25);
+  log('hatch: спуск');
+}
 
 /* --- джойстик --- */
 let stickActive=false;
@@ -1378,6 +1385,7 @@ function spawnSmoke(center,op=.9){
 /*                          СЦЕНАРИЙ                                */
 /* ================================================================ */
 async function actRoof(){
+  log('act: roof');
   await wait(500);
   await fade(0,4500);
   await say('narr','Ты стоишь на краю крыши заброшенного здания.');
@@ -1385,7 +1393,7 @@ async function actRoof(){
   await say('narr','Работа. Счета. Пустота.');
   await say('narr','Каждый день — как предыдущий. Каждый следующий — не лучше.');
   G.canMove=true;
-  await new Promise(r=>{G.edgeCheck=()=>{if(G.pos.z>=-31.35)r();};});
+  await waitCond(()=>G.pos.z>=-31.35);
   G.canMove=false;
   await say('narr','Порыв ветра.',1400);
   G.windBoost=1;G.shake=1.2;
@@ -1407,6 +1415,7 @@ async function actRoof(){
   await wait(2100);ft.classList.remove('on','reveal','slide');
 }
 async function actVoid(){
+  log('act: void');
   const{rim,key}=voidWorld.userData;
   for(let i=0;i<60;i++){rim.intensity=lerp(0,.7,i/60);key.intensity=lerp(0,.5,i/60);await wait(26);}
   AU.blip(160,.4,'sine',.05);
@@ -1428,6 +1437,7 @@ async function actVoid(){
   await wait(250);AU.pad();flash(1,900);
 }
 async function actCandy(){
+  log('act: candy');
   showWorld(candyWorld,{fog:0xdaf6ff,fogD:.0022,clear:0xbfeeff});
   AU.inCandy=true;miaSpd=2.8;
   G.pos.set(0,1.68,46);G.yaw=Math.PI;G.pitch=0;
@@ -1462,8 +1472,7 @@ async function actCandy(){
     new THREE.MeshBasicMaterial({color:0x8c2f39,side:THREE.DoubleSide}));
   tie.position.set(0,1.22,.145);am.g.add(tie);
   candyWorld.add(am.g);
-  await new Promise(r=>{G.squareCheck=()=>{
-    if(Math.hypot(G.pos.x,G.pos.z)<17)r();};});
+  await waitCond(()=>Math.hypot(G.pos.x,G.pos.z)<17);
   G.canMove=false;stopBroadcast();G.shake=.5;
   await say('angry','Я СКАЗАЛ — НЕ ТРОГАЙ МЕНЯ!',2600);
   await say('angry','Мне плевать на ваши улыбки! Вы что, все с ума сошли?!',3100);
@@ -1535,6 +1544,7 @@ async function patrolCaught(){
     'Ладно. Только я тебя снова спасла, имей в виду.'][Math.min(G.caughtN-1,2)],3600);
 }
 async function actPatrol(){
+  log('act: patrol');
   showWorld(patrolWorld,{fog:0xcdeef2,fogD:.002,clear:0xc9ecf0});
   G.state='PATROL';
   G.hatchUsed=false;G.hatchReady=false;setEReady(false);
@@ -1553,30 +1563,38 @@ async function actPatrol(){
   await say('mia','Попал в жёлтый веер — шкала падает. '+
     (IS_TOUCH?'Жми Q — кнопка справа.':'Жми Q — натянуть маску.')+
     ' В маске падает медленно. Но долго носить нельзя!',5200);
-  await new Promise(r=>{G.patCheck=()=>{if(G.pos.z<30)r();};});
+  /* чекпоинт середины улицы — самостоятельный опрос, зависнуть не может */
+  await waitCond(()=>G.pos.z<30);
   ctrlTxt('цель: зелёный луч света в конце улицы');
-  await say('mia','Люк в конце улицы — зелёный столб света. Войдёшь в светлое кольцо вокруг люка — и жми '+(IS_TOUCH?'кнопку E справа':'E')+'. Вниз!',4200);
-  /* АКТИВАЦИЯ ЛЮКА: вошёл в зону → E доступна */
+  await say('mia','Люк в конце улицы — зелёный столб света. Войдёшь в кольцо вокруг него — жми '+(IS_TOUCH?'кнопку E справа':'E')+'. Или просто постой на самой крышке.',4600);
+  /* === АКТИВАЦИЯ ЛЮКА: самостоятельный вотчер === */
   await new Promise(res=>{
-    G.hatchResolve=res;
+    let onLid=0;
     const iv=setInterval(()=>{
-      if(G.state!=='PATROL'||G.hatchUsed){clearInterval(iv);return;}
+      if(G.state!=='PATROL'||G.hatchUsed){clearInterval(iv);res();return;}
       const d=Math.hypot(G.pos.x,G.pos.z+41);
-      if(d<3.4&&!G.hatchReady){
+      if(d<4.5&&!G.hatchReady){
         G.hatchReady=true;
-        showPrompt('E',IS_TOUCH?'жми E справа — спуститься':'Спуститься в люк');
-        setEReady(true);AU.chime();}
-      else if(d>=4.2&&G.hatchReady){
-        G.hatchReady=false;
-        setEReady(false);hidePrompt();}
-    },80);});
+        showPrompt('E',IS_TOUCH?'жми E справа — спуск':'Спуститься в люк');
+        setEReady(true);AU.chime();
+        log('hatch: зона активна');
+      }else if(d>=5.2&&G.hatchReady){
+        G.hatchReady=false;setEReady(false);hidePrompt();
+      }
+      /* автоспуск: просто стоишь на самой крышке ~1 секунду */
+      if(d<1.7){onLid+=80;
+        if(onLid>=900){clearInterval(iv);tryHatch();res();return;}
+      }else onLid=0;
+    },80);
+  });
   setEReady(false);hidePrompt();
   G.canMove=false;
-  AU.thump(.45);AU.splash(.25);
+  AU.thump(.45);
   await say('narr','Скобы уходят вниз. Темно. Пахнет ржавчиной и тушёнкой.',3200);
   await fade(1,900);
 }
 async function actTunnels(){
+  log('act: tunnels');
   showWorld(tunnelWorld,{fog:0x06070a,fogD:.06,clear:0x040507});
   G.state='TUNNEL';
   $('#joyWrap').classList.remove('on');
@@ -1629,6 +1647,7 @@ async function actTunnels(){
   await fade(0,1000);
 }
 async function actShelter(){
+  log('act: shelter');
   await say('mia','Фред — не буди, он после дежурства. Скажет умное — не верь. Скажет глупое — тем более.',4200);
   await moveObj(maruObj.g,V(-28.4,0,-40),1800,{bob:.06});
   maruObj.g.lookAt(G.pos.x,0,G.pos.z);
@@ -1705,6 +1724,7 @@ async function actShelter(){
   placeMia(tunnelWorld,V(-27.4,0,-38.4),Math.PI);
 }
 async function actOuting(){
+  log('act: outing');
   await say('mia','Правила простые. Жёлтых видишь — улыбайся. Не можешь — маска. Красных не видишь вообще.',4600);
   await say('mia','Если увидел Красного — значит, уже мёртв, просто ещё не понял.',3200);
   await say('mia','Сейчас научу панель вскрывать. Надо нажать в такт, как игра «Повтори мелодию». Тупая система, но работает.',4600);
@@ -1736,8 +1756,7 @@ async function actOuting(){
   miaWalk.go([V(4.6,0,-47.6),V(8,0,-56),V(11,0,-66)]);
   mia.moving=true;
   G.pos.set(6.4,1.68,-52);G.yaw=2.6;G.canMove=true;
-  await new Promise(r=>{G.cratesCheck=()=>{
-    if(Math.hypot(G.pos.x-11,G.pos.z+66)<2.4)r();};});
+  await waitCond(()=>Math.hypot(G.pos.x-11,G.pos.z+66)<2.4);
   AU.thump(.3);
   await say('player','Есть. Тяжёлые.',2200);
   const{spot,spotCone}=outskirtWorld.userData;
@@ -1789,6 +1808,7 @@ async function finishChase(){
   G.state='WATER';
 }
 async function actWater(){
+  log('act: water');
   showWorld(waterWorld,{fog:0x04070c,fogD:.09,clear:0x03050a});
   placeMia(waterWorld,V(-1.1,0,-1),0);
   G.pos.set(0,1.3,1);G.yaw=0;G.pitch=0;G.canMove=false;
@@ -1873,6 +1893,7 @@ async function actWater(){
   await postCredits();
 }
 async function postCredits(){
+  log('act: post');
   G.state='POST';
   waterWorld.visible=false;
   renderer.setClearColor(0x000000);scene.background=new THREE.Color(0x000000);scene.fog=null;
@@ -1959,12 +1980,10 @@ function animate(){
       let nx=G.pos.x+(mx*cy+mz*sy)*sp;
       let nz=G.pos.z+(-mx*sy+mz*cy)*sp;
       if(G.state==='ROOF'){
-        nx=clamp(nx,-9.4,9.4);nz=clamp(nz,-51.4,96);
-        if(G.edgeCheck)G.edgeCheck();}
+        nx=clamp(nx,-9.4,9.4);nz=clamp(nz,-51.4,96);}
       else if(G.state==='CANDY'){
         const d=Math.hypot(nx,nz);
-        if(d>70){nx*=70/d;nz*=70/d;}
-        if(G.squareCheck)G.squareCheck();}
+        if(d>70){nx*=70/d;nz*=70/d;}}
       else if(G.state==='PATROL'){
         nx=clamp(nx,-4.6,4.6);nz=clamp(nz,-43.2,46);
         let danger=0;
@@ -1987,8 +2006,7 @@ function animate(){
         if(rz){nx=rz[0];nz=rz[1];}else{nx=G.pos.x;nz=G.pos.z;}}
       else if(G.state==='OUTSK'){
         if(nz>-50.5){nx=clamp(nx,-4.6,4.6);}
-        else{nx=clamp(nx,-0.5,16.5);nz=clamp(nz,-74.5,28);}
-        if(G.cratesCheck)G.cratesCheck();}
+        else{nx=clamp(nx,-0.5,16.5);nz=clamp(nz,-74.5,28);}}
       else if(G.state==='WATER'){
         nx=clamp(nx,-1.9,1.9);nz=clamp(nz,-9.5,4);
         if(Math.random()<dt*2.2)AU.splash(.06);}
@@ -2084,7 +2102,6 @@ function animate(){
       bc.glowRing.material.opacity=.5+Math.abs(Math.sin(t*2.2))*.4;
       bc.glowRing.scale.setScalar(1+Math.sin(t*2.2)*.1);
       bc.beaconLight.intensity=.6+Math.abs(Math.sin(t*1.7))*.6;
-      /* зона действия люка пульсирует ярче, когда E доступна */
       bc.zone.material.opacity=G.hatchReady?.3+Math.abs(Math.sin(t*4))*.2:.14;}
     pats.forEach(p=>{
       p.t+=p.speed*p.dir*dt/p.a.distanceTo(p.b);
@@ -2137,7 +2154,7 @@ fsIcon();
   G.state='ROOF';
   G.pos.set(0,61.68,-50);G.yaw=Math.PI;G.pitch=0;
   checkRot();
-  if(!isFS())toggleFS().catch(()=>{});   /* авто-фуллскрин; при отказе — тост */
+  if(!isFS())toggleFS().catch(()=>{});
   scriptMain();
 });
 animate();
