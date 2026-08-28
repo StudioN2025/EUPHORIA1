@@ -725,7 +725,7 @@ const pats=[];
     pats.push({obj:y,a:V(a[0],0,a[1]),b:V(b[0],0,b[1]),speed:1.15,t:rnd(0,1),dir:1});});
 })();
 
-/* ========== МИР 5: ТОННЕЛИ — один прямой коридор + убежище ======== */
+/* ========== МИР 5: ТОННЕЛИ — прямой коридор + убежище ============= */
 const tunnelWorld=new THREE.Group();scene.add(tunnelWorld);tunnelWorld.visible=false;
 let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
 (function buildTunnels(){
@@ -737,13 +737,11 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
     m.position.set(x,y,z);m.receiveShadow=true;tunnelWorld.add(m);return m;};
   const mkF=(w,d,x,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,.2,d),floorM);
     m.position.set(x,-.1,z);m.receiveShadow=true;tunnelWorld.add(m);};
-  /* коридор: x∈[-1.7,1.7], z∈[3,-46] */
   mkF(3.4,49,0,-21.5);
   mk(3.4,.2,49,0,2.7,-21.5);
   mk(.3,2.7,49,-1.85,1.35,-21.5);
   mk(.3,2.7,49,1.85,1.35,-21.5);
   mk(3.4,2.7,.3,0,1.35,3.15);
-  /* комната убежища: x∈[-9,3], z∈[-46.6,-56] */
   mkF(12,9.4,-3,-51.3);
   mk(12,.2,9.4,-3,3,-51.3);
   mk(.3,3,9.4,-9.15,1.5,-51.3);
@@ -751,7 +749,6 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   mk(12,3,.3,-3,1.5,-56.15);
   mk(7.3,3,.3,-5.35,1.5,-46.45);
   mk(1.3,3,.3,2.35,1.5,-46.45);
-  /* дверь с солнцем */
   const doorPivot=new THREE.Group();doorPivot.position.set(0,0,-46.3);
   const doorMesh=new THREE.Mesh(new THREE.CylinderGeometry(1.45,1.45,.18,26),
     new THREE.MeshStandardMaterial({map:sunDoorTex(),roughness:.8,metalness:.3}));
@@ -769,11 +766,9 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
         dg.rotation.y=k*k*-1.9;k<1?requestAnimationFrame(sw):res();})();})};
   tunnelWorld.userData.doorOpen=false;
   tunnelWorld.userData.doorGlow=doorGlow;
-  /* синяя полоса-путеводитель */
   const guide=new THREE.Mesh(new THREE.BoxGeometry(.5,.03,48),
     new THREE.MeshBasicMaterial({color:0x2b8bd8,transparent:true,opacity:.3}));
   guide.position.set(0,.02,-20.5);tunnelWorld.add(guide);
-  /* дрон-клоун (слева у стены, спит) */
   droneRef=new THREE.Group();
   const ball=new THREE.Mesh(new THREE.SphereGeometry(.45,18,14),
     new THREE.MeshStandardMaterial({color:0xf2ede2,roughness:.35}));
@@ -796,7 +791,6 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   droneRef.userData={beacon:beaconL,alert:0,baseY:2.05};
   droneRef.position.set(-1.05,2.05,-18);
   tunnelWorld.add(droneRef);
-  /* труба с паром */
   const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,22,10),
     new THREE.MeshStandardMaterial({color:0x5d6b5a,roughness:.6,metalness:.4}));
   pipe.rotation.x=Math.PI/2;pipe.position.set(1.35,2.45,-14);tunnelWorld.add(pipe);
@@ -809,13 +803,11 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   steamG.setAttribute('position',new THREE.BufferAttribute(sp,3));
   dustP=new THREE.Points(steamG,new THREE.PointsMaterial({size:.5,map:tx(pc),transparent:true,opacity:.4,depthWrite:false}));
   tunnelWorld.add(dustP);
-  /* аварийные лампы */
   [[0,2.35,-8],[0,2.35,-30],[0,2.3,-43.5]].forEach(([lx,ly,lz])=>{
     const em=new THREE.Mesh(new THREE.BoxGeometry(.25,.1,.1),new THREE.MeshBasicMaterial({color:0x87ffa0}));
     em.position.set(lx,ly,lz);tunnelWorld.add(em);
     const el=new THREE.PointLight(0x77ffaa,.3,7);el.position.set(lx,ly-.3,lz);
     tunnelWorld.add(el);bulbs.push({lamp:el,base:.3,flick:true});});
-  /* УБЕЖИЩЕ */
   const wire=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,1.1,6),new THREE.MeshStandardMaterial({color:0x333333}));
   wire.position.set(-4.5,2.85,-51);tunnelWorld.add(wire);
   const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,10,10),new THREE.MeshBasicMaterial({color:0xffe8b0}));
@@ -887,8 +879,6 @@ let droneRef=null,fredObj=null,maruObj=null,shelterDoor=null,dustP=null;
   wrench.position.set(0,-.62,.03);maruObj.armR.add(wrench);
   tunnelWorld.add(maruObj.g);
 })();
-
-/* Коллизии тоннелей. Дверь закрыта → дальше -45.6 не пройти. */
 function tunnelClamp(nx,nz){
   const m=.38,TW=tunnelWorld.userData;
   if(!TW.doorOpen){
@@ -1040,7 +1030,7 @@ const G={
   joy:100,masked:false,maskT:0,caughtN:0,longMaskSaid:false,
   subTO:0,branch:'',playerName:'',lastMX:0,lastMZ:0,lastTap:'',
   chaseDist:0,chaseActive:false,patrolBusy:false,catchGlow:0,
-  hatchUsed:false,hatchReady:false,lidT:0,tunnelsGo:false,
+  hatchUsed:false,hatchReady:false,lidT:0,
 };
 
 /* =========================== ВВОД ================================= */
@@ -1171,104 +1161,7 @@ function toggleMask(){
   AU.blip(G.masked?520:340,.08,'square',.035);}
 function ctrlTxt(t){$('#ctrlHint').textContent=t;$('#ctrlHint').classList.add('on');}
 
-/* ===== ЛЮК: самодостаточный переход (не зависит от сценария) ===== */
-let hatchBusy=false;
-function tryHatch(){
-  if(hatchBusy)return;
-  if(G.state!=='PATROL'||G.hatchUsed||!G.canMove)return;
-  hatchBusy=true;
-  G.hatchUsed=true;G.hatchReady=false;
-  setEReady(false);hidePrompt();
-  G.canMove=false;
-  AU.thump(.45);AU.splash(.25);
-  log('hatch: спуск — переход запущен');
-  (async()=>{
-    await say('narr','Скобы уходят вниз. Темно. Пахнет ржавчиной и тушёнкой.',2600);
-    await fade(1,800);
-    G.tunnelsGo=true;
-    log('hatch: переход готов');
-  })();
-}
-
-/* --- джойстик --- */
-let stickActive=false;
-function placeStickBase(){
-  const s=$('#stickUI');
-  const bar=innerHeight*.09;
-  s.style.left='26px';
-  s.style.top=(innerHeight-bar-26-112)+'px';
-  $('#stickKnob').style.transform='translate(-50%,-50%)';}
-
-function checkRot(){
-  const on=IS_TOUCH&&innerHeight>innerWidth&&G.state!=='MENU'&&G.state!=='END';
-  $('#rotHint').classList.toggle('on',on);}
-
-/* ===================== МИНИ-ИГРА ВЗЛОМА =========================== */
-function hackGame(){
-  return new Promise(resolve=>{
-    const ui=$('#hackUI'),row=$('#hackRow'),msg=$('#hackMsg');
-    const cols=['#ff6a5e','#8dff6a','#5ad2ff','#ffd23c'];
-    row.innerHTML='';
-    const freqs=[330,392,494,587];
-    const btns=cols.map((c,i)=>{const b=document.createElement('div');
-      b.className='hbtn';b.style.background=c;b.style.color=c;row.appendChild(b);
-      b.onclick=()=>press(i);return b;});
-    ui.classList.add('on');
-    let seq=[],idx=0,round=0,accepting=false;
-    function playSeq(){
-      accepting=false;msg.textContent=`этап ${round+1}/2 — смотри…`;
-      seq=[];const len=round===0?3:4;
-      for(let i=0;i<len;i++)seq.push(Math.floor(Math.random()*4));
-      idx=0;
-      seq.forEach((s,i)=>setTimeout(()=>{btns[s].classList.add('lit');
-        AU.blip(freqs[s],.22,'triangle',.09);
-        setTimeout(()=>btns[s].classList.remove('lit'),380);},700+i*640));
-      setTimeout(()=>{accepting=true;msg.textContent='повтори мелодию';},700+len*640);}
-    function press(i){
-      if(!accepting)return;
-      btns[i].classList.add('lit');AU.blip(freqs[i],.16,'triangle',.09);
-      setTimeout(()=>btns[i].classList.remove('lit'),200);
-      if(seq[idx]===i){idx++;
-        if(idx>=seq.length){accepting=false;
-          if(round===0){round=1;AU.chime();setTimeout(playSeq,900);}
-          else{msg.textContent='доступ разрешён ✓';AU.chime();
-            setTimeout(()=>{ui.classList.remove('on');resolve(true);},800);}}
-      }else{accepting=false;msg.textContent='ошибка. заново.';
-        AU.blip(180,.3,'sawtooth',.08);setTimeout(playSeq,900);}}
-    playSeq();});}
-
-/* ================== ВСПОМОГАТЕЛЬНОЕ =============================== */
-function moveObj(o,to,ms,opt={}){
-  return new Promise(res=>{const st=o.position.clone(),t0=performance.now();
-    if(opt.look)o.lookAt(to.x,o.position.y,to.z);
-    (function go(){const k=Math.min(1,(performance.now()-t0)/ms);
-      o.position.lerpVectors(st,to,k);
-      if(opt.bob)o.position.y=Math.abs(Math.sin(k*ms/130))*opt.bob;
-      k<1?requestAnimationFrame(go):(o.position.copy(to),res());})();});}
-function camTween(toPos,toLook,ms){
-  return new Promise(res=>{
-    const fp=G.pos.clone(),fl=G.lookCur.clone();
-    G.canMove=false;G.camO=true;
-    const t0=performance.now();
-    (function go(){const k=Math.min(1,(performance.now()-t0)/ms),e=k*k*(3-2*k);
-      G.pos.lerpVectors(fp,toPos,e);G.lookCur.lerpVectors(fl,toLook,e);
-      if(k<1)requestAnimationFrame(go);else res();})();});}
-function releaseCam(){G.camO=false;}
-function setSkyAndFog(fogCol,density,clearCol){
-  scene.fog=density!=null?new THREE.FogExp2(fogCol,density):null;
-  renderer.setClearColor(clearCol);scene.background=new THREE.Color(clearCol);}
-function showWorld(world,{fog,fogD=0,clear}={}){
-  [roofWorld,voidWorld,candyWorld,patrolWorld,tunnelWorld,outskirtWorld,waterWorld]
-    .forEach(w=>w.visible=w===world);
-  setSkyAndFog(fog,fogD,clear);}
-function placeMia(world,pos,ry=0){
-  if(mia.g.parent)mia.g.parent.remove(mia.g);
-  world.add(mia.g);mia.g.position.copy(pos);mia.g.position.y=0;
-  mia.g.rotation.set(0,ry,0);
-  mia.legL.rotation.x=0;mia.legR.rotation.x=0;mia.armL.rotation.x=0;mia.armR.rotation.x=0;
-  mia.moving=false;miaWalk.reset();}
-
-/* --- Мия: движение + follow --- */
+/* --- Мия: движение + follow (нужны и tryHatch, и сценам) --- */
 let walkerPaused=false,lastScold=0,miaSpd=2.8,miaFollowMode=false;
 const miaWalk={
   path:[],tgt:0,idx:0,
@@ -1330,6 +1223,19 @@ setInterval(()=>{
       const nx=clamp(G.pos.x+1.2,-30,30),nz=clamp(G.pos.z-1.5,-70,60);
       mia.g.position.set(nx,0,nz);}}
 },1500);
+function showWorld(world,{fog,fogD=0,clear}={}){
+  [roofWorld,voidWorld,candyWorld,patrolWorld,tunnelWorld,outskirtWorld,waterWorld]
+    .forEach(w=>w.visible=w===world);
+  scene.fog=densityFix(fog,fogD);
+  renderer.setClearColor(clear);scene.background=new THREE.Color(clear);
+  function densityFix(fc,fd){return fd!=null?new THREE.FogExp2(fc,fd):null;}
+}
+function placeMia(world,pos,ry=0){
+  if(mia.g.parent)mia.g.parent.remove(mia.g);
+  world.add(mia.g);mia.g.position.copy(pos);mia.g.position.y=0;
+  mia.g.rotation.set(0,ry,0);
+  mia.legL.rotation.x=0;mia.legR.rotation.x=0;mia.armL.rotation.x=0;mia.armR.rotation.x=0;
+  mia.moving=false;miaWalk.reset();}
 
 /* ---------- дым ---------- */
 let smoke=null;
@@ -1359,7 +1265,7 @@ function spawnSmoke(center,op=.9){
   host.add(smoke.pts);}
 
 /* ================================================================ */
-/*                          СЦЕНАРИЙ                                */
+/*            СЦЕНАРИЙ + САМОДОСТАТОЧНЫЙ ПЕРЕХОД                     */
 /* ================================================================ */
 async function actRoof(){
   log('act: roof');
@@ -1543,7 +1449,7 @@ async function actPatrol(){
   await waitCond(()=>G.pos.z<30);
   ctrlTxt('цель: зелёный луч света в конце улицы');
   await say('mia','Люк в конце улицы — зелёный столб света. Войдёшь в кольцо — жми E. Или просто постой на самой крышке.',4600);
-  /* вотчер зоны: только подсветка/подсказка. Спуск делает tryHatch. */
+  /* вотчер зоны — только подсветка. Спуск — целиком в tryHatch. */
   const zoneIv=setInterval(()=>{
     if(G.state!=='PATROL'||G.hatchUsed){clearInterval(zoneIv);return;}
     const d=Math.hypot(G.pos.x,G.pos.z+41);
@@ -1555,27 +1461,40 @@ async function actPatrol(){
     }else if(d>=5.2&&G.hatchReady){
       G.hatchReady=false;setEReady(false);hidePrompt();}
   },80);
-  /* сценарий стоит здесь, пока tryHatch не выполнит переход */
-  await waitCond(()=>G.hatchUsed);
+  /* сценарий МИРНО ждёт, пока tryHatch сам не запустит тоннели */
+  await waitCond(()=>G.state==='TUNNEL',200);
   clearInterval(zoneIv);
-  setEReady(false);hidePrompt();
-  /* tryHatch сам показал субтитр и затемнил экран — просто ждём готовности */
-  await waitCond(()=>G.tunnelsGo);
 }
-/* ---------- ТОННЕЛИ: стартует после готовности от tryHatch ---------- */
-async function actTunnels(){
-  await waitCond(()=>G.tunnelsGo);
-  G.tunnelsGo=false;
-  log('act: tunnels — вход');
-  showWorld(tunnelWorld,{fog:0x06070a,fogD:.05,clear:0x040507});
-  G.state='TUNNEL';
-  hatchBusy=false;
-  $('#joyWrap').classList.remove('on');
-  miaFollowMode=false;miaSpd=3.4;
-  tunnelWorld.userData.doorOpen=false;
-  placeMia(tunnelWorld,V(.6,0,-3.5),Math.PI);
-  G.pos.set(0,1.66,-1.5);G.yaw=0;G.pitch=0;
-  await fade(0,1400);
+/* ===== САМОДОСТАТОЧНЫЙ ПЕРЕХОД: нажал E → сам сменил мир → сам запустил сцену ===== */
+let hatchBusy=false;
+function tryHatch(){
+  if(hatchBusy)return;
+  if(G.state!=='PATROL'||G.hatchUsed||!G.canMove)return;
+  hatchBusy=true;
+  G.hatchUsed=true;G.hatchReady=false;
+  setEReady(false);hidePrompt();
+  G.canMove=false;
+  AU.thump(.45);AU.splash(.25);
+  log('hatch: спуск — переход запущен');
+  (async()=>{
+    await say('narr','Скобы уходят вниз. Темно. Пахнет ржавчиной и тушёнкой.',2400);
+    await fade(1,700);
+    /* === СМЕНА МИРА ПРЯМО ЗДЕСЬ === */
+    showWorld(tunnelWorld,{fog:0x06070a,fogD:.05,clear:0x040507});
+    G.state='TUNNEL';
+    $('#joyWrap').classList.remove('on');
+    miaFollowMode=false;miaSpd=3.4;
+    tunnelWorld.userData.doorOpen=false;
+    placeMia(tunnelWorld,V(.6,0,-3.5),Math.PI);
+    G.pos.set(0,1.66,-1.5);G.yaw=0;G.pitch=0;
+    await fade(0,1200);
+    log('tunnels: мир показан');
+    /* сцена тоннелей живёт отдельным потоком */
+    tunnelScene();
+  })();
+}
+async function tunnelScene(){
+  log('tunnels: сценарий');
   await say('narr','Ржавые скобы. Сырость. Пахнет тушёнкой… и ещё чем-то.',3000);
   G.canMove=true;
   ctrlTxt('следуй за Мией и синей полосой на полу');
@@ -1602,7 +1521,6 @@ async function actTunnels(){
       })();
     }
   },120);
-  /* ждём: Мия у двери ИЛИ игрок сам дошёл до двери */
   await waitCond(()=>miaWalk.idx>=8||G.pos.z<-44.4,150);
   clearInterval(droneIv);
   clearInterval(eg);
@@ -1621,77 +1539,91 @@ async function actTunnels(){
   await camTween(V(-.5,1.66,-47.8),V(-4.5,1.6,-51),2600);
   await say('narr','Тёплый свет. Лампочка без плафона. Пахнет тушёнкой, сыростью и… жизнью.',3800);
   await fade(1,700);
-  G.pos.set(-4.5,1.66,-49.5);G.yaw=Math.PI*.06;G.pitch=0;releaseCam();
-  await wait(400);
+  G.pos.set(-4.5,1.66,-49.5);G.yaw=Math.PI*.06;G.pitch=0;
   await fade(0,1000);
+  /* убежище — тоже отдельный поток */
+  shelterScene();
 }
-async function actShelter(){
+async function camTween(toPos,toLook,ms){
+  return new Promise(res=>{
+    const fp=G.pos.clone(),fl=V(0,0,0);
+    G.canMove=false;G.camO=true;
+    const t0=performance.now();
+    (function go(){const k=Math.min(1,(performance.now()-t0)/ms),e=k*k*(3-2*k);
+      G.pos.lerpVectors(fp,toPos,e);
+      camera.position.copy(G.pos);
+      camera.lookAt(toLook);
+      if(k<1)requestAnimationFrame(go);else res();})();});
+}
+function releaseCam(){G.camO=false;}
+async function shelterScene(){
   log('act: shelter');
-  await say('mia','Фред — не буди, он после дежурства. Скажет умное — не верь. Скажет глупое — тем более.',4200);
+  const say2=say;
+  await say2('mia','Фред — не буди, он после дежурства. Скажет умное — не верь. Скажет глупое — тем более.',4200);
   await moveObj(maruObj.g,V(-3.2,0,-52.2),1800,{bob:.06});
   maruObj.g.lookAt(G.pos.x,0,G.pos.z);
-  await say('maru','Худой. Бледный. Из офисных, что ли?',2800);
-  await say('mia','Новенький. С крыши сняла.',2200);
-  await say('maru','А, самоубийца. У нас такие долго не живут. Но если не дурак — научишься.',3400);
-  await say('maru','Маруся. Чиню всё, что ломается. А ломается здесь всё. Включая людей.',3600);
-  await say('player','А он?');
-  await say('maru','Фред чинит сети. И нервы. Иногда чужие. Чаще — свои.',3000);
+  await say2('maru','Худой. Бледный. Из офисных, что ли?',2800);
+  await say2('mia','Новенький. С крыши сняла.',2200);
+  await say2('maru','А, самоубийца. У нас такие долго не живут. Но если не дурак — научишься.',3400);
+  await say2('maru','Маруся. Чиню всё, что ломается. А ломается здесь всё. Включая людей.',3600);
+  await say2('player','А он?');
+  await say2('maru','Фред чинит сети. И нервы. Иногда чужие. Чаще — свои.',3000);
   await wait(700);
   await new Promise(res=>{const t0=performance.now();(function wk(){
     const k=Math.min(1,(performance.now()-t0)/900);
     fredObj.g.rotation.x=lerp(Math.PI/2,1.32,k);fredObj.g.position.y=lerp(.18,.32,k);
     k<1?requestAnimationFrame(wk):res();})();});
-  await say('fred','Воды дайте, кому сказал.',2200);
+  await say2('fred','Воды дайте, кому сказал.',2200);
   fredObj.g.lookAt(G.pos.x,0,G.pos.z);
-  await say('fred','Ты кто?',2000);
-  await say('player','Новенький.');
-  await say('fred','Все вы новенькие. Жеку помнишь? А он вас всех помнил. До того как его забрали.',4000);
-  await say('mia','Фред, хватит.',1800);
-  await say('fred','Красные пришли. Ночью. Выломали дверь. Он даже не сопротивлялся. Просто… улыбнулся.',4600);
-  await say('fred','С тех пор я ненавижу улыбки.',2400);
-  await say('fred','Ты боишься?',2000);
-  await say('player','Пока нет.');
-  await say('fred','Дурак. Это пройдёт.',2200);
+  await say2('fred','Ты кто?',2000);
+  await say2('player','Новенький.');
+  await say2('fred','Все вы новенькие. Жеку помнишь? А он вас всех помнил. До того как его забрали.',4000);
+  await say2('mia','Фред, хватит.',1800);
+  await say2('fred','Красные пришли. Ночью. Выломали дверь. Он даже не сопротивлялся. Просто… улыбнулся.',4600);
+  await say2('fred','С тех пор я ненавижу улыбки.',2400);
+  await say2('fred','Ты боишься?',2000);
+  await say2('player','Пока нет.');
+  await say2('fred','Дурак. Это пройдёт.',2200);
   await new Promise(res=>{const t0=performance.now();(function lk(){
     const k=Math.min(1,(performance.now()-t0)/700);
     fredObj.g.rotation.x=lerp(1.32,Math.PI/2,k);fredObj.g.position.y=lerp(.32,.18,k);
     k<1?requestAnimationFrame(lk):res();})();});
-  await say('fred','Будешь умирать — не ори. У нас тут дети есть.',3200);
+  await say2('fred','Будешь умирать — не ори. У нас тут дети есть.',3200);
   await fade(1,1800);await wait(500);await fade(0,1400);
-  await say('narr','Убежище затихает. Все спят.',2600);
+  await say2('narr','Убежище затихает. Все спят.',2600);
   placeMia(tunnelWorld,V(-2.6,0,-54.4),Math.PI);
   mia.legL.rotation.x=-1.3;mia.legR.rotation.x=-1.1;
   mia.g.position.y=-.12;
   G.pos.set(-3.4,1.66,-53.2);
   G.yaw=Math.atan2(-(mia.g.position.x-G.pos.x),-(mia.g.position.z-G.pos.z));
   G.canMove=false;
-  await say('mia','Сколько я здесь? Полгода. Или год. Сбилась со счёта. Тут нет календарей, потому что «каждый день — праздник».',5200);
-  await say('player','А до этого?');
-  await say('mia','Я была… неважно кем. Училась. Потом работала в кофейне. Улыбалась идиотам, которые не говорят «спасибо».',5000);
-  await say('mia','А потом один из них оказался жёлтым. Сказал, что у меня грустные глаза.',3600);
-  await say('mia','Я не хочу, чтобы ты лез в Замок. Серьёзно. У нас и так трупов хватает.',3800);
-  await say('player','Какой замок?');
-  await say('mia','В центре города. Стеклянная башня. Там парит… Он. Тот, кто всё это придумал. Или не придумал. Я уже не знаю.',5400);
-  await say('mia','Ты всё равно полезешь, да? Все новенькие лезут. Думают, что спасут мир. А мир не хотят спасать. Миру нравится улыбаться.',5600);
-  await say('player','А если я всё равно полезу?');
-  await say('mia','Тогда я пойду с тобой. Потому что без меня ты через пять минут либо сдохнешь, либо наденешь маску и не снимешь.',5200);
-  await say('mia','А теперь спи. Завтра покажу, как обходить патрули. Если, конечно, Фред не спиздил мои отвёртки.',4400);
+  await say2('mia','Сколько я здесь? Полгода. Или год. Сбилась со счёта. Тут нет календарей, потому что «каждый день — праздник».',5200);
+  await say2('player','А до этого?');
+  await say2('mia','Я была… неважно кем. Училась. Потом работала в кофейне. Улыбалась идиотам, которые не говорят «спасибо».',5000);
+  await say2('mia','А потом один из них оказался жёлтым. Сказал, что у меня грустные глаза.',3600);
+  await say2('mia','Я не хочу, чтобы ты лез в Замок. Серьёзно. У нас и так трупов хватает.',3800);
+  await say2('player','Какой замок?');
+  await say2('mia','В центре города. Стеклянная башня. Там парит… Он. Тот, кто всё это придумал. Или не придумал. Я уже не знаю.',5400);
+  await say2('mia','Ты всё равно полезешь, да? Все новенькие лезут. Думают, что спасут мир. А мир не хотят спасать. Миру нравится улыбаться.',5600);
+  await say2('player','А если я всё равно полезу?');
+  await say2('mia','Тогда я пойду с тобой. Потому что без меня ты через пять минут либо сдохнешь, либо наденешь маску и не снимешь.',5200);
+  await say2('mia','А теперь спи. Завтра покажу, как обходить патрули. Если, конечно, Фред не спиздил мои отвёртки.',4400);
   await camTween(V(-.6,1.62,-50.6),V(2.85,1.6,-49.9),2600);
-  await say('narr','Ты не спишь. На стене — фотографии. На каждой — человек. Настоящей улыбкой.',4000);
+  await say2('narr','Ты не спишь. На стене — фотографии. На каждой — человек. Настоящей улыбкой.',4000);
   await camTween(V(.8,1.62,-48.9),V(2.85,2.05,-48.9),1500);
-  await say('narr','«Жека. 1987 — ?» Мужчина с усами, с кружкой кофе. Его ты уже знаешь.',3800);
+  await say2('narr','«Жека. 1987 — ?» Мужчина с усами, с кружкой кофе. Его ты уже знаешь.',3800);
   await camTween(V(.8,1.62,-48.9),V(2.85,1.1,-48.9),1400);
-  await say('narr','«Лена. 1992 — 2049». Женщина обнимает кота. Кот не улыбается. Коту всё равно.',4200);
+  await say2('narr','«Лена. 1992 — 2049». Женщина обнимает кота. Кот не улыбается. Коту всё равно.',4200);
   await camTween(V(.8,1.62,-50.8),V(2.85,2.05,-50.8),1400);
-  await say('narr','«Толя. Звали — Артём». Фото стёрто. Только подпись.',3500);
+  await say2('narr','«Толя. Звали — Артём». Фото стёрто. Только подпись.',3500);
   await camTween(V(.8,1.62,-50.8),V(2.85,1.1,-50.8),1400);
-  await say('narr','«Дети. Их имена забрали первыми» Трое детей. Лица заклеены смайликами.',4000);
+  await say2('narr','«Дети. Их имена забрали первыми» Трое детей. Лица заклеены смайликами.',4000);
   placeMia(tunnelWorld,V(-.4,0,-50),Math.PI*.9);
   releaseCam();
-  await say('mia','Это те, кто не вернулся. Или вернулся не тем, кем был. Я каждую ночь на них смотрю. Чтобы не забыть, зачем я здесь.',5000);
-  await say('player','Зачем ты здесь?');
+  await say2('mia','Это те, кто не вернулся. Или вернулся не тем, кем был. Я каждую ночь на них смотрю. Чтобы не забыть, зачем я здесь.',5000);
+  await say2('player','Зачем ты здесь?');
   await wait(900);
-  await say('mia','Ищу маму.',2200);
+  await say2('mia','Ищу маму.',2200);
   placeMia(tunnelWorld,V(-1.5,0,-50),Math.PI*.95);
   miaWalk.go([V(-1.5,0,-50),V(-4,0,-52.5)]);
   await wait(1200);
@@ -1699,10 +1631,51 @@ async function actShelter(){
   await fade(1,1600);await wait(800);
   G.pos.set(-4.8,1.66,-50.4);G.yaw=Math.PI*.12;G.pitch=0;
   await fade(0,1600);
-  await say('narr','Утро. Свет от лампочки ровно такой же, как вечером. Здесь вообще не бывает иначе.',3600);
+  await say2('narr','Утро. Свет от лампочки ровно такой же, как вечером. Здесь вообще не бывает иначе.',3600);
   placeMia(tunnelWorld,V(-3.6,0,-51),Math.PI);
+  /* вылазка — следующий этап */
+  outingScene();
 }
-async function actOuting(){
+async function moveObj(o,to,ms,opt={}){
+  return new Promise(res=>{const st=o.position.clone(),t0=performance.now();
+    if(opt.look)o.lookAt(to.x,o.position.y,to.z);
+    (function go(){const k=Math.min(1,(performance.now()-t0)/ms);
+      o.position.lerpVectors(st,to,k);
+      if(opt.bob)o.position.y=Math.abs(Math.sin(k*ms/130))*opt.bob;
+      k<1?requestAnimationFrame(go):(o.position.copy(to),res());})();});}
+function hackGame(){
+  return new Promise(resolve=>{
+    const ui=$('#hackUI'),row=$('#hackRow'),msg=$('#hackMsg');
+    const cols=['#ff6a5e','#8dff6a','#5ad2ff','#ffd23c'];
+    row.innerHTML='';
+    const freqs=[330,392,494,587];
+    const btns=cols.map((c,i)=>{const b=document.createElement('div');
+      b.className='hbtn';b.style.background=c;b.style.color=c;row.appendChild(b);
+      b.onclick=()=>press(i);return b;});
+    ui.classList.add('on');
+    let seq=[],idx=0,round=0,accepting=false;
+    function playSeq(){
+      accepting=false;msg.textContent=`этап ${round+1}/2 — смотри…`;
+      seq=[];const len=round===0?3:4;
+      for(let i=0;i<len;i++)seq.push(Math.floor(Math.random()*4));
+      idx=0;
+      seq.forEach((s,i)=>setTimeout(()=>{btns[s].classList.add('lit');
+        AU.blip(freqs[s],.22,'triangle',.09);
+        setTimeout(()=>btns[s].classList.remove('lit'),380);},700+i*640));
+      setTimeout(()=>{accepting=true;msg.textContent='повтори мелодию';},700+len*640);}
+    function press(i){
+      if(!accepting)return;
+      btns[i].classList.add('lit');AU.blip(freqs[i],.16,'triangle',.09);
+      setTimeout(()=>btns[i].classList.remove('lit'),200);
+      if(seq[idx]===i){idx++;
+        if(idx>=seq.length){accepting=false;
+          if(round===0){round=1;AU.chime();setTimeout(playSeq,900);}
+          else{msg.textContent='доступ разрешён ✓';AU.chime();
+            setTimeout(()=>{ui.classList.remove('on');resolve(true);},800);}}
+      }else{accepting=false;msg.textContent='ошибка. заново.';
+        AU.blip(180,.3,'sawtooth',.08);setTimeout(playSeq,900);}}
+    playSeq();});}
+async function outingScene(){
   log('act: outing');
   await say('mia','Правила простые. Жёлтых видишь — улыбайся. Не можешь — маска. Красных не видишь вообще.',4600);
   await say('mia','Если увидел Красного — значит, уже мёртв, просто ещё не понял.',3200);
@@ -1784,9 +1757,9 @@ async function finishChase(){
   G.shake=1.8;
   AU.thump(.5);AU.splash(.3);
   await fade(1,450);
-  G.state='WATER';
+  waterScene();
 }
-async function actWater(){
+async function waterScene(){
   log('act: water');
   showWorld(waterWorld,{fog:0x04070c,fogD:.09,clear:0x03050a});
   placeMia(waterWorld,V(-1.1,0,-1),0);
@@ -1869,7 +1842,7 @@ async function actWater(){
     await say('mia','Я вернусь за тобой. Обещаю.',3400);
   }
   await wait(700);
-  await postCredits();
+  postCredits();
 }
 async function postCredits(){
   log('act: post');
@@ -1913,17 +1886,14 @@ async function postCredits(){
     :'ветка: «промолчал» · запись ведётся по шаблону №14';
   $('#endCard').classList.add('on');
 }
-
 async function scriptMain(){
   try{
     await actRoof();
     await actVoid();
     await actCandy();
     await actPatrol();
-    await actTunnels();
-    await actShelter();
-    await actOuting();
-    await actWater();
+    /* дальше сценарий продолжают самостоятельные потоки:
+       tryHatch → tunnelScene → shelterScene → outingScene → waterScene → postCredits */
   }catch(err){
     console.error(err);
   }
@@ -1980,7 +1950,6 @@ function animate(){
         if(G.joy<=0&&!G.patrolBusy){G.joy=0;joyFX();G.patrolBusy=true;
           patrolCaught().then(()=>G.patrolBusy=false);}
         joyFX();
-        /* автоспуск: стоишь на самой крышке ~0.9 сек — спуск сам */
         if(!G.hatchUsed){
           const hd=Math.hypot(nx,nz+41);
           if(hd<1.5){G.lidT+=dt;if(G.lidT>.9){log('hatch: автоспуск с крышки');tryHatch();}}
@@ -2008,9 +1977,7 @@ function animate(){
   }
 
   if(G.camO){
-    camera.position.copy(G.pos);
-    camera.lookAt(G.lookCur);
-    camera.fov+=(G.fovBase-camera.fov)*dt*4;camera.updateProjectionMatrix();
+    /* камера управляется camTween напрямую */
   }else if(G.state==='VOID'){
     camera.position.set(Math.sin(t*.5)*.06,1.62+Math.sin(t*.7)*.03,4.4);
     camera.rotation.order='YXZ';
