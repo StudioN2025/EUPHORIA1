@@ -2,17 +2,21 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>EUPHORIA — Глава 1: Крыша</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Manrope:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  *{margin:0;padding:0;box-sizing:border-box;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;
+    overscroll-behavior:none;touch-action:none;position:fixed;inset:0}
   body{font-family:'Manrope',sans-serif;color:#e8e6e1}
+  input{-webkit-user-select:text;user-select:text}
   #app{position:fixed;inset:0;transition:filter .8s ease}
   body.masked #app{filter:saturate(.7) contrast(1.06) brightness(.92)}
-  canvas{display:block}
+  canvas{display:block;touch-action:none}
   .layer{position:fixed;inset:0;pointer-events:none}
   #vignette{box-shadow:inset 0 0 220px 60px rgba(0,0,0,.75);z-index:20;transition:box-shadow .8s ease}
   body.masked #vignette{box-shadow:inset 0 0 340px 140px rgba(0,0,0,.92)}
@@ -99,9 +103,38 @@
   .hbtn{width:52px;height:52px;cursor:pointer;border:2px solid rgba(255,255,255,.25);transition:all .1s}
   .hbtn.lit{transform:scale(1.18);border-color:#fff;box-shadow:0 0 18px currentColor}
   #hackMsg{margin-top:12px;font-family:'JetBrains Mono';font-size:11px;letter-spacing:.2em;color:#6a8f6a;text-transform:uppercase}
-  #maskBtn{position:fixed;left:18px;bottom:calc(9vh + 96px);z-index:34;display:none;pointer-events:auto;cursor:pointer;background:rgba(0,0,0,.45);border:1px solid rgba(255,226,122,.7);color:#ffe27a;font-family:'Unbounded';font-weight:700;font-size:12px;letter-spacing:.24em;padding:12px 18px;text-transform:uppercase;border-radius:6px}
-  #maskBtn.act{background:#ffd94d;color:#111}
-  #stickUI{position:fixed;z-index:33;width:112px;height:112px;border-radius:50%;border:1px solid rgba(255,255,255,.28);display:none;pointer-events:none}
+
+  /* ===== ПОСТОЯННЫЕ КНОПКИ E / Q ===== */
+  #keyBtns{position:fixed;right:16px;bottom:calc(9vh + 26px);z-index:34;display:none;gap:14px;pointer-events:auto}
+  #keyBtns.on{display:flex}
+  .kbtn{width:66px;height:66px;border-radius:50%;border:2px solid rgba(255,255,255,.8);
+        background:rgba(0,0,0,.45);color:#fff;font-family:'JetBrains Mono';font-weight:700;
+        font-size:24px;cursor:pointer;touch-action:manipulation;
+        transition:background .1s,color .1s,box-shadow .2s,border-color .2s}
+  .kbtn:active{background:rgba(255,255,255,.92);color:#000;transform:scale(.94)}
+  /* подсветка «действие доступно» */
+  .kbtn.ready{border-color:#9df7b4;color:#c9ffd6;
+    box-shadow:0 0 16px rgba(157,247,180,.65);animation:readyPulse 1.1s ease-in-out infinite}
+  @keyframes readyPulse{0%,100%{box-shadow:0 0 10px rgba(157,247,180,.45)}50%{box-shadow:0 0 22px rgba(157,247,180,.9)}}
+
+  /* ===== ФУЛЛСКРИН ===== */
+  #fsBtn{position:fixed;top:14px;right:14px;z-index:36;width:44px;height:44px;border-radius:8px;
+         background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.4);color:#fff;
+         font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+         pointer-events:auto;touch-action:manipulation}
+  #fsBtn:active{background:rgba(255,255,255,.85);color:#000}
+
+  /* ===== ТОСТ ===== */
+  #toast{position:fixed;top:calc(9vh + 60px);left:50%;transform:translateX(-50%);z-index:60;
+         display:none;max-width:min(520px,90vw);background:rgba(12,14,18,.94);
+         border:1px solid rgba(255,255,255,.35);color:#f2f0ea;font-size:13px;line-height:1.5;
+         padding:12px 16px;border-radius:10px;text-align:center;pointer-events:auto}
+  #toast.on{display:block}
+  #toast a{color:#8fd3ff;text-decoration:underline}
+
+  #rotHint{position:fixed;top:calc(9vh + 12px);left:50%;transform:translateX(-50%);z-index:35;display:none;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.3);color:#e8e6e1;font-size:11px;letter-spacing:.2em;padding:8px 14px;text-transform:uppercase;border-radius:6px;pointer-events:none}
+  #rotHint.on{display:block}
+  #stickUI{position:fixed;z-index:33;width:112px;height:112px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.05);display:none;pointer-events:none}
   #stickKnob{position:absolute;left:50%;top:50%;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.32);transform:translate(-50%,-50%)}
 </style>
 </head>
@@ -115,7 +148,7 @@
   <div id="joyWrap"><div id="joyLabel">Фальшивая радость</div><div id="joyBar"><div id="joyFill"></div></div></div>
   <div id="chaseWrap"><div id="chaseLabel">Беги!</div><div id="chaseBar"><div id="chaseFill"></div></div></div>
   <div id="subsWrap"><div id="speaker"></div><div id="subText"></div></div>
-  <div id="prompt"><b>F</b><span id="promptText"></span></div>
+  <div id="prompt"><b>E</b><span id="promptText"></span></div>
   <div id="ctrlHint">WASD — идти · мышь — смотреть</div>
 </div>
 <div id="fakeTitles" class="layer"><div id="ftEnd">КОНЕЦ</div><div id="ftThanks">СПАСИБО ЗА ИГРУ</div><div id="ftChoice">ВЫБОР СДЕЛАН</div></div>
@@ -132,7 +165,10 @@
   <button id="startBtn">Новая игра</button>
   <div id="menuWarn">содержит мигающие изображения</div>
 </div>
-<button id="maskBtn">маска</button>
+<button id="fsBtn" title="Полный экран">⛶</button>
+<div id="keyBtns"><button id="kbE" class="kbtn">E</button><button id="kbQ" class="kbtn">Q</button></div>
+<div id="toast"></div>
+<div id="rotHint">↻ поверни телефон горизонтально</div>
 <div id="stickUI"><div id="stickKnob"></div></div>
 
 <script type="module">
@@ -143,7 +179,64 @@ const $=s=>document.querySelector(s);
 const V=(x,y,z)=>new THREE.Vector3(x,y,z);
 const lerp=(a,b,t)=>a+(b-a)*t,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-const IS_TOUCH='ontouchstart'in window||navigator.maxTouchPoints>0;
+
+const UA=navigator.userAgent||'';
+const IS_TOUCH=
+  ((('ontouchstart'in window)||navigator.maxTouchPoints>0)
+    &&window.matchMedia&&matchMedia('(pointer:coarse)').matches)
+  ||/Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile/i.test(UA)
+  ||(navigator.maxTouchPoints>1&&/Macintosh/.test(UA));
+
+/* ================== ЗАЩИТА ВЫДЕЛЕНИЯ/ПЕРЕТАСКИВАНИЯ =============== */
+document.addEventListener('dragstart',e=>e.preventDefault());
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('selectstart',e=>{
+  if(e.target&&e.target.tagName!=='INPUT')e.preventDefault();});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('dblclick',e=>e.preventDefault());
+
+/* ======================= ТОСТ ===================================== */
+let toastTO=null;
+function toast(html,ms=4000){
+  const t=$('#toast');t.innerHTML=html;t.classList.add('on');
+  clearTimeout(toastTO);toastTO=setTimeout(()=>t.classList.remove('on'),ms);}
+
+/* ======================= ФУЛЛСКРИН ================================ */
+function fsElement(){return document.fullscreenElement||document.webkitFullscreenElement
+  ||document.mozFullScreenElement||document.msFullscreenElement||null;}
+function isFS(){return !!fsElement();}
+async function enterFS(){
+  const el=document.documentElement;
+  const fn=el.requestFullscreen||el.webkitRequestFullscreen
+    ||el.mozRequestFullScreen||el.msRequestFullscreen;
+  if(!fn)throw new Error('unsupported');
+  const res=fn.call(el,{navigationUI:'hide'});
+  if(res&&typeof res.catch==='function')await res;
+  /* iOS-фиксация ориентации, где доступна */
+  try{
+    if(screen.orientation&&screen.orientation.lock)
+      await screen.orientation.lock('landscape');
+  }catch(e){}
+}
+function exitFS(){
+  const fn=document.exitFullscreen||document.webkitExitFullscreen
+    ||document.mozCancelFullScreen||document.msExitFullscreen;
+  if(fn)fn.call(document);
+}
+async function toggleFS(){
+  try{
+    if(!isFS()){await enterFS();}
+    else{exitFS();}
+  }catch(err){
+    /* Встроенные окна/iframe без allowfullscreen отклоняют фуллскрин —
+       объясняем пользователю вместо молчаливого отказа. */
+    toast('Полный экран заблокирован этим окном.<br>Открой игру в <a href="javascript:location.reload()" target="_self">отдельной вкладке</a> или добавь страницу на главный экран — тогда кнопка сработает.',5200);
+  }
+  fsIcon();
+}
+function fsIcon(){$('#fsBtn').textContent=isFS()?'⤡':'⛶';}
+document.addEventListener('fullscreenchange',fsIcon);
+document.addEventListener('webkitfullscreenchange',fsIcon);
 
 /* ============================== AUDIO ============================= */
 const AU={ctx:null,inCandy:false,chase:false,_nextNote:0,_kick:0,_drop:0};
@@ -229,7 +322,7 @@ renderer.outputColorSpace=THREE.SRGBColorSpace;
  $('#app').appendChild(renderer.domElement);
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.1,1200);
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);checkRot();});
 
 /* =========================== TEXTURES ============================= */
 function cvs(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return[c,c.getContext('2d')];}
@@ -481,7 +574,7 @@ function bunnyToy(col=0xa8845c){
     new THREE.MeshStandardMaterial({color:col,roughness:.9}));
     ear.position.set(dx,.11,0);toy.add(ear);});
   const[stc,stx]=cvs(64,32);
-  stx.strokeStyle='#111';stx.lineWidth=4;
+  stx.strokeStyle='#111111';stx.lineWidth=4;
   [14,46].forEach(ex=>{stx.beginPath();stx.moveTo(ex-5,5);stx.lineTo(ex+5,13);stx.stroke();
     stx.beginPath();stx.moveTo(ex+5,5);stx.lineTo(ex-5,13);stx.stroke();});
   const st=new THREE.Mesh(new THREE.PlaneGeometry(.09,.05),
@@ -564,7 +657,7 @@ const crowd=[],walkers=[];let yellows=[];
     const f=new THREE.Mesh(new THREE.PlaneGeometry(2.6,2.6),
       new THREE.MeshBasicMaterial({map:faceTex('smile'),transparent:true,side:THREE.DoubleSide}));
     f.position.z=2.55;b.add(f);
-    const str=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,10,4),mat('#fff',.6));
+    const str=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,10,4),mat('#ffffff',.6));
     str.position.y=-6.3;b.add(str);
     b.position.set(bs[0],bs[1],bs[2]);b.userData.ph=rnd(0,6);candyWorld.add(b);
     crowd.push({g:b,balloon:true});});
@@ -584,7 +677,6 @@ const crowd=[],walkers=[];let yellows=[];
   sun.shadow.camera.updateProjectionMatrix();candyWorld.add(sun);
 })();
 
-/* лампы объявляем ДО миров, которые их используют */
 const bulbs=[];
 
 /* ================ МИР 4: ПРОВЕРОЧНЫЙ РАЙОН ======================== */
@@ -607,11 +699,16 @@ const pats=[];
     b.position.set(side*(11+w/2),h/2-.1,z);b.castShadow=b.receiveShadow=true;patrolWorld.add(b);}
   for(let i=0;i<8;i++){const a=new THREE.Mesh(new THREE.TorusGeometry(.5,.07,6,20),mat(P[i%6]));
     a.position.set(rnd(-4,4),rnd(5,7),40-i*11);patrolWorld.add(a);}
-  /* ---- ЛЮК + МАЯК (виден издалека) ---- */
+  /* люк + маяк + подсветка зоны входа */
   const hatchRing=new THREE.Mesh(new THREE.TorusGeometry(1.05,.14,8,24),mat('#4c4741',.8));
   hatchRing.rotation.x=-Math.PI/2;hatchRing.position.set(0,.12,-41);patrolWorld.add(hatchRing);
   const hatchDark=new THREE.Mesh(new THREE.CircleGeometry(1,24),new THREE.MeshBasicMaterial({color:0x02120a}));
   hatchDark.rotation.x=-Math.PI/2;hatchDark.position.set(0,.125,-41);patrolWorld.add(hatchDark);
+  /* светлая «зона действия» — видно, где E работает */
+  const zone=new THREE.Mesh(new THREE.RingGeometry(2.2,3.4,36),
+    new THREE.MeshBasicMaterial({color:0x9df7b4,transparent:true,opacity:.16,
+      side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+  zone.rotation.x=-Math.PI/2;zone.position.set(0,.13,-41);patrolWorld.add(zone);
   const beacon=new THREE.Mesh(new THREE.CylinderGeometry(.85,1.15,30,18,1,true),
     new THREE.MeshBasicMaterial({color:0xaef7c0,transparent:true,opacity:.13,
       side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
@@ -623,11 +720,10 @@ const pats=[];
   const beaconLight=new THREE.PointLight(0x9df7b4,.9,10);
   beaconLight.position.set(0,1.6,-41);patrolWorld.add(beaconLight);
   patrolWorld.userData.beacon=beacon;patrolWorld.userData.glowRing=glowRing;
-  patrolWorld.userData.beaconLight=beaconLight;
-  /* указатель */
+  patrolWorld.userData.beaconLight=beaconLight;patrolWorld.userData.zone=zone;
   const signC=document.createElement('canvas');signC.width=256;signC.height=64;
   const sg=signC.getContext('2d');sg.fillStyle='#7dffa8';sg.fillRect(0,0,256,64);
-  sg.fillStyle='#04160a';sg.font='900 34px Manrope';sg.textAlign='center';sg.fillText('ВНИЗ ↓',128,44);
+  sg.fillStyle='#04160a';sg.font='900 34px Manrope';sg.textAlign='center';sg.fillText('ВНИЗ · E',128,44);
   const sign=new THREE.Mesh(new THREE.BoxGeometry(3.2,.8,.1),new THREE.MeshStandardMaterial({map:tx(signC),roughness:.5}));
   sign.position.set(3.6,3.4,-37);sign.rotation.y=-.5;sign.castShadow=true;patrolWorld.add(sign);
   const pole=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,3.4,8),mat('#888888'));
@@ -950,19 +1046,55 @@ const G={
   joy:100,masked:false,maskT:0,caughtN:0,longMaskSaid:false,
   subTO:0,branch:'',playerName:'',lastMX:0,lastMZ:0,lastTap:'',
   chaseDist:0,chaseActive:false,cratesGrabbed:false,patrolBusy:false,catchGlow:0,
-  hatchUsed:false,
+  hatchUsed:false,hatchReady:false,hatchResolve:null,
 };
 
 /* =========================== ВВОД ================================= */
 const keys={};
+
+/* --- единые действия E и Q (клавиатура + экранные кнопки) --- */
+function setEReady(on){$('#kbE').classList.toggle('ready',!!on);}
+function pressE(){
+  /* 1) люк: в зоне — всегда спускаем */
+  if(G.state==='PATROL'&&G.hatchReady&&!G.hatchUsed&&G.canMove){tryHatch();return;}
+  /* 2) активный диалог/выбор */
+  if(G.keyHandler){G.keyHandler('KeyE');return;}
+  /* 3) страховка: если стоишь на люке, но флаг почему-то сброшен */
+  if(G.state==='PATROL'&&!G.hatchUsed&&G.canMove&&
+     Math.hypot(G.pos.x,G.pos.z+41)<3.4){tryHatch();return;}
+}
+function pressQ(){
+  if(['PATROL','OUTSK'].includes(G.state)&&G.canMove&&!G.maskLock)toggleMask();
+  if(G.keyHandler)G.keyHandler('KeyQ');
+}
+
 addEventListener('keydown',e=>{
   keys[e.code]=true;
-  if(['KeyE','KeyM'].includes(e.code)&&['PATROL','OUTSK'].includes(G.state)&&G.canMove)toggleMask();
+  if(e.code==='KeyE')pressE();
+  if(e.code==='KeyQ'||e.code==='KeyM')pressQ();
   if(['KeyW','KeyA','KeyS','KeyD','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']
      .includes(e.code)&&G.state==='CHASE'){
     if(e.code!==G.lastTap){G.chaseDist=Math.min(100,G.chaseDist+3.4);G.lastTap=e.code;AU.splash(.05);}}
-  if(G.keyHandler)G.keyHandler(e.code);});
+  if(!['KeyE','KeyQ','KeyM'].includes(e.code)&&G.keyHandler)G.keyHandler(e.code);});
 addEventListener('keyup',e=>keys[e.code]=false);
+
+/* экранные кнопки — мгновенный pointerdown, дубли защищены */
+function bindKeyBtn(el,fn){
+  let lastTap=0;
+  el.addEventListener('pointerdown',e=>{
+    e.preventDefault();e.stopPropagation();
+    const now=performance.now();
+    if(now-lastTap<260)return;
+    lastTap=now;
+    fn();
+  });
+}
+bindKeyBtn($('#kbE'),pressE);
+bindKeyBtn($('#kbQ'),pressQ);
+
+/* фуллскрин-кнопка тоже на pointerdown */
+ $('#fsBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();toggleFS();});
+
 const canvas=renderer.domElement;
 canvas.addEventListener('click',()=>{
   if(!IS_TOUCH&&['ROOF','CANDY','PATROL','TUNNEL','OUTSK','WATER'].includes(G.state)){
@@ -979,8 +1111,9 @@ if(IS_TOUCH){
     if(G.state==='CHASE'){G.chaseDist=Math.min(100,G.chaseDist+4.2);AU.splash(.05);}
     for(const t of e.changedTouches){
       if(t.clientX<innerWidth/2&&moveId===null){
-        moveId=t.identifier;mBase={x:t.clientX,y:t.clientY};
-        stick.style.display='block';stick.style.left=(t.clientX-56)+'px';stick.style.top=(t.clientY-56)+'px';
+        moveId=t.identifier;stickActive=true;mBase={x:t.clientX,y:t.clientY};
+        stick.style.left=(t.clientX-56)+'px';
+        stick.style.top=(t.clientY-56)+'px';
       }else if(lookId===null){lookId=t.identifier;lLast={x:t.clientX,y:t.clientY};}}
   },{passive:true});
   canvas.addEventListener('touchmove',e=>{
@@ -997,8 +1130,10 @@ if(IS_TOUCH){
         lLast={x:t.clientX,y:t.clientY};}}
   },{passive:true});
   const endT=e=>{for(const t of e.changedTouches){
-    if(t.identifier===moveId){moveId=null;moveVec.x=moveVec.y=0;stick.style.display='none';
-      $('#stickKnob').style.transform='translate(-50%,-50%)';}
+    if(t.identifier===moveId){
+      moveId=null;moveVec.x=moveVec.y=0;stickActive=false;
+      $('#stickKnob').style.transform='translate(-50%,-50%)';
+      placeStickBase();}
     if(t.identifier===lookId)lookId=null;}};
   canvas.addEventListener('touchend',endT);canvas.addEventListener('touchcancel',endT);
 }
@@ -1026,19 +1161,22 @@ async function say(who,text,hold){
 function showPrompt(key,label){$('#promptText').textContent=label;
   $('#prompt b').textContent=key;$('#prompt').classList.add('on');}
 function hidePrompt(){$('#prompt').classList.remove('on');}
+
 function awaitChoice(keyMain,labelMain,extra){
   return new Promise(res=>{
     let done=false;
-    const finish=c=>{if(done)return;done=true;G.keyHandler=null;
-      document.removeEventListener('pointerdown',tapH);res(c);};
-    G.keyHandler=c=>{if(c===keyMain)finish('main');
+    const finish=c=>{if(done)return;done=true;
+      G.keyHandler=null;hidePrompt();res(c);};
+    G.keyHandler=c=>{
+      if(c===keyMain)finish('main');
       else if(extra&&c===extra.key)finish('alt');};
-    const tapH=e=>{finish('main');};
-    document.addEventListener('pointerdown',tapH);
     $('#prompt b').textContent=keyMain.replace('Key','');
     $('#promptText').innerHTML=labelMain+
-      (extra?`&nbsp;&nbsp;·&nbsp;&nbsp;<b style="margin-left:6px">${extra.key.replace('Key','')}</b>${extra.label}${IS_TOUCH?' <span style="opacity:.6">(тап = первый вариант)</span>':''}`:'');
-    $('#prompt').classList.add('on');});}
+      (extra?`&nbsp;&nbsp;·&nbsp;&nbsp;<b style="margin-left:6px">${extra.key.replace('Key','')}</b>${extra.label}`:'');
+    $('#prompt').classList.add('on');
+  });
+}
+
 function broadcast(text){$('#broadcast').textContent=text;$('#broadcast').classList.add('on');AU.chime();}
 function stopBroadcast(){$('#broadcast').classList.remove('on');}
 function caption(text,on=true){const c=$('#bigCaption');c.textContent=text;c.classList.toggle('on',on);}
@@ -1048,11 +1186,30 @@ function joyFX(){const pct=clamp(G.joy,0,100);
 function toggleMask(){
   if(G.masked){G.masked=false;document.body.classList.remove('masked');G.maskT=0;}
   else{G.masked=true;document.body.classList.add('masked');AU.blip(300,.12,'triangle',.05);}
-  $('#maskBtn').classList.toggle('act',G.masked);
   AU.blip(G.masked?520:340,.08,'square',.035);}
 function ctrlTxt(t){$('#ctrlHint').textContent=t;$('#ctrlHint').classList.add('on');}
- $('#maskBtn').addEventListener('pointerdown',e=>e.stopPropagation());
- $('#maskBtn').addEventListener('click',e=>{e.stopPropagation();toggleMask();});
+
+/* --- люк: единая точка спуска --- */
+function tryHatch(){
+  if(G.state!=='PATROL'||G.hatchUsed||!G.canMove)return;
+  G.hatchUsed=true;G.hatchReady=false;
+  setEReady(false);hidePrompt();
+  AU.thump(.45);
+  const r=G.hatchResolve;G.hatchResolve=null;
+  r&&r();}
+
+/* --- джойстик --- */
+let stickActive=false;
+function placeStickBase(){
+  const s=$('#stickUI');
+  const bar=innerHeight*.09;
+  s.style.left='26px';
+  s.style.top=(innerHeight-bar-26-112)+'px';
+  $('#stickKnob').style.transform='translate(-50%,-50%)';}
+
+function checkRot(){
+  const on=IS_TOUCH&&innerHeight>innerWidth&&G.state!=='MENU'&&G.state!=='END';
+  $('#rotHint').classList.toggle('on',on);}
 
 /* ===================== МИНИ-ИГРА ВЗЛОМА =========================== */
 function hackGame(){
@@ -1117,8 +1274,7 @@ function placeMia(world,pos,ry=0){
   world.add(mia.g);mia.g.position.copy(pos);mia.g.position.y=0;
   mia.g.rotation.set(0,ry,0);
   mia.legL.rotation.x=0;mia.legR.rotation.x=0;mia.armL.rotation.x=0;mia.armR.rotation.x=0;
-  mia.moving=false;miaWalk.reset();
-}
+  mia.moving=false;miaWalk.reset();}
 
 /* --- движение Мии --- */
 let walkerPaused=false,lastScold=0,miaSpd=2.8,miaFollowMode=false;
@@ -1139,7 +1295,6 @@ const miaWalk={
       const ty=Math.atan2(dx,dz);let cur=mia.g.rotation.y,
         diff=((ty-cur+Math.PI)%(Math.PI*2))-Math.PI;
       mia.g.rotation.y=cur+diff*Math.min(1,dt*6);}},
-  /* следование за игроком (улица) — никогда не застревает */
   follow(dt,cl){
     const px=G.pos.x,pz=G.pos.z;
     const tx=clamp(px*.8,-3.6,3.6),tz=pz-(cl?.behind??1.9)+(cl?.lead??0);
@@ -1165,7 +1320,6 @@ function miaSay(line,hold){
   return say('miyaw',line,hold).then(()=>{
     walkerPaused=false;mia.moving=wasMoving&&miaWalk.path.length>0;});}
 function escort(interval,stateName){
-  /* замечание максимум раз в 8 секунд — без циклов-зависаний */
   const iv=setInterval(()=>{
     if(G.state!==stateName){clearInterval(iv);return;}
     if(performance.now()-lastScold<8000)return;
@@ -1182,14 +1336,13 @@ function resolveZones(nx,nz,zones){
     return[clamp(nx,q[0],q[1]),nz];
   return null;}
 
-/* watchdog: Мия с незаконченным путём не имеет права стоять */
 setInterval(()=>{
   if(!['CANDY','TUNNEL','OUTSK'].includes(G.state))return;
   if(walkerPaused)return;
   if(miaWalk.path.length&&miaWalk.tgt<miaWalk.path.length-1&&!mia.moving)mia.moving=true;
   if(miaWalk.path.length){
     const dm=Math.hypot(mia.g.position.x-G.pos.x,mia.g.position.z-G.pos.z);
-    if(dm>26){ /* совсем потерялась — переносим поближе */
+    if(dm>26){
       const nx=clamp(G.pos.x+1.2,-30,30),nz=clamp(G.pos.z-1.5,-70,60);
       mia.g.position.set(nx,0,nz);}}
 },1500);
@@ -1228,7 +1381,7 @@ async function actRoof(){
   await wait(500);
   await fade(0,4500);
   await say('narr','Ты стоишь на краю крыши заброшенного здания.');
-  ctrlTxt(IS_TOUCH?'левый палец — идти · правый — смотреть':'WASD — идти · мышь — смотреть');
+  ctrlTxt(IS_TOUCH?'левый палец — джойстик · правый — камера':'WASD — идти · мышь — смотреть');
   await say('narr','Работа. Счета. Пустота.');
   await say('narr','Каждый день — как предыдущий. Каждый следующий — не лучше.');
   G.canMove=true;
@@ -1269,7 +1422,6 @@ async function actVoid(){
   await new Promise(res=>{(function raise(){const k=Math.min(1,(performance.now()-t0)/900);
     miaArm.rotation.x=-k*2.1;miaArm.rotation.z=k*.3;k<1?requestAnimationFrame(raise):res();})();});
   await awaitChoice('KeyE','взять руку');
-  hidePrompt();
   const t1=performance.now(),cf=G.pos.clone();
   await new Promise(res=>{(function reach(){const k=Math.min(1,(performance.now()-t1)/1100);
     G.pos.copy(cf).lerp(V(0,1.6,-.4),k*k);k<1?requestAnimationFrame(reach):res();})();});
@@ -1285,7 +1437,7 @@ async function actCandy(){
   placeMia(candyWorld,V(1.5,0,45),Math.PI);
   miaWalk.go([V(1.5,0,45),V(0,0,30),V(-4,0,14),V(6,0,3)]);
   G.canMove=true;
-  ctrlTxt(IS_TOUCH?'левый палец — идти · правый — смотреть':'WASD — идти · мышь — смотреть');
+  ctrlTxt(IS_TOUCH?'левый палец — джойстик · правый — камера':'WASD — идти · мышь — смотреть');
   const eg=escort(1300,'CANDY');
   await say('mia','Не стой столбом. Двигай ногами.',2700);
   await miaWalk.waypoint(1);
@@ -1351,8 +1503,8 @@ async function actCandy(){
   await say('mia','Теперь понял, где ты? Вот и молчи.',2900);
   maskItem.visible=true;maskItem.position.set(G.pos.x+1,1.25,G.pos.z+.2);
   await say('mia','Это — твоё лицо теперь. Когда рядом жёлтые — надевай. Но долго не носи.',4000);
-  const ch=await awaitChoice('KeyE','взять маску',{key:'KeyQ',label:' отказ'});
-  hidePrompt();maskItem.visible=false;
+  const ch=await awaitChoice('KeyE','взять маску',{key:'KeyQ',label:'отказ'});
+  maskItem.visible=false;
   if(ch==='main'){await say('mia','Умница.',1500);
     await say('mia','Начнёшь думать. А мысли здесь — хуже, чем розовый дым.',3300);}
   else{await say('mia','Герой, значит.',1800);
@@ -1360,7 +1512,6 @@ async function actCandy(){
   await say('mia','Пошли. Дальше — проверочный район. Мимо него к нашим.',3600);
   clearInterval(eg);
 }
-/* ---------- проверочный район ---------- */
 async function patrolCaught(){
   G.canMove=false;G.joy=0;joyFX();
   AU.alarm();
@@ -1373,21 +1524,20 @@ async function patrolCaught(){
   caption('',false);
   G.pos.set(0,1.68,44);G.yaw=Math.PI;G.joy=100;
   G.masked=false;document.body.classList.remove('masked');
-  $('#maskBtn').classList.remove('act');
+  G.hatchReady=false;G.hatchUsed=false;setEReady(false);hidePrompt();
   joyFX();
-  /* Мия рядом с игроком после респауна */
   mia.g.position.set(1.2,0,43.5);mia.g.rotation.set(0,Math.PI,0);
   await fade(0,900);
   G.canMove=true;G.caughtN++;
   await say('mia',['Так. Ещё раз: увидел жёлтого — маску. '+
-      (IS_TOUCH?'Кнопка слева.':'Кнопка E.'),
+      (IS_TOUCH?'Кнопка Q справа.':'Клавиша Q.'),
     'Ты вообще слушал?! Жёлтый веер подсвечен. Не лезь туда без маски!',
     'Ладно. Только я тебя снова спасла, имей в виду.'][Math.min(G.caughtN-1,2)],3600);
 }
 async function actPatrol(){
   showWorld(patrolWorld,{fog:0xcdeef2,fogD:.002,clear:0xc9ecf0});
   G.state='PATROL';
-  G.hatchUsed=false;
+  G.hatchUsed=false;G.hatchReady=false;setEReady(false);
   placeMia(patrolWorld,V(1.2,0,45.5),Math.PI);
   G.pos.set(0,1.68,44);G.yaw=Math.PI;G.pitch=0;G.joy=100;joyFX();
   $('#joyWrap').classList.add('on');
@@ -1395,29 +1545,32 @@ async function actPatrol(){
   await fade(0,1400);
   await say('narr','Улицы сужаются. Патрулей больше.');
   G.canMove=true;
-  ctrlTxt(IS_TOUCH?'кнопка МАСКА слева':'E — маска · следи за шкалой радости');
+  ctrlTxt(IS_TOUCH?'E — люк · Q — маска (справа)':'Q — маска · следи за шкалой радости');
   await say('mia','Это проверочный район. Здесь ищут «нестабильных».',3200);
   await say('mia','Корректируют. Это не больно. Это… сладко. Розовый дым. А потом ты счастлив. Всегда.',4200);
   await say('player','Звучит как пытка.');
   await say('mia','А это не пытка? Смотреть на них?',2800);
   await say('mia','Попал в жёлтый веер — шкала падает. '+
-    (IS_TOUCH?'Жми кнопку маски.':'Жми E — натянуть маску.')+
+    (IS_TOUCH?'Жми Q — кнопка справа.':'Жми Q — натянуть маску.')+
     ' В маске падает медленно. Но долго носить нельзя!',5200);
   await new Promise(r=>{G.patCheck=()=>{if(G.pos.z<30)r();};});
   ctrlTxt('цель: зелёный луч света в конце улицы');
-  await say('mia','Люк в конце улицы — увидишь зелёный столб света. Там наши.',3600);
-  /* ждём люка: подсказка при приближении, авто-спуск на самом люке */
-  let hintShown=false;
+  await say('mia','Люк в конце улицы — зелёный столб света. Войдёшь в светлое кольцо вокруг люка — и жми '+(IS_TOUCH?'кнопку E справа':'E')+'. Вниз!',4200);
+  /* АКТИВАЦИЯ ЛЮКА: вошёл в зону → E доступна */
   await new Promise(res=>{
+    G.hatchResolve=res;
     const iv=setInterval(()=>{
-      if(G.state!=='PATROL'||G.hatchUsed){clearInterval(iv);res();return;}
+      if(G.state!=='PATROL'||G.hatchUsed){clearInterval(iv);return;}
       const d=Math.hypot(G.pos.x,G.pos.z+41);
-      if(d<8&&!hintShown){hintShown=true;
-        showPrompt('▼','встань на люк');AU.chime();}
-      if(d>10&&hintShown&&d>0){hintShown=false;hidePrompt();}
-      if(d<2.4&&!G.hatchUsed){G.hatchUsed=true;clearInterval(iv);hidePrompt();res();}
-    },100);});
-  clearInterval(void 0);
+      if(d<3.4&&!G.hatchReady){
+        G.hatchReady=true;
+        showPrompt('E',IS_TOUCH?'жми E справа — спуститься':'Спуститься в люк');
+        setEReady(true);AU.chime();}
+      else if(d>=4.2&&G.hatchReady){
+        G.hatchReady=false;
+        setEReady(false);hidePrompt();}
+    },80);});
+  setEReady(false);hidePrompt();
   G.canMove=false;
   AU.thump(.45);AU.splash(.25);
   await say('narr','Скобы уходят вниз. Темно. Пахнет ржавчиной и тушёнкой.',3200);
@@ -1551,13 +1704,11 @@ async function actShelter(){
   await say('narr','Утро. Свет от лампочки ровно такой же, как вечером. Здесь вообще не бывает иначе.',3600);
   placeMia(tunnelWorld,V(-27.4,0,-38.4),Math.PI);
 }
-/* ---------- вылазка ---------- */
 async function actOuting(){
   await say('mia','Правила простые. Жёлтых видишь — улыбайся. Не можешь — маска. Красных не видишь вообще.',4600);
   await say('mia','Если увидел Красного — значит, уже мёртв, просто ещё не понял.',3200);
   await say('mia','Сейчас научу панель вскрывать. Надо нажать в такт, как игра «Повтори мелодию». Тупая система, но работает.',4600);
-  showPrompt('F','Подъём по лестнице');
-  await awaitChoice('KeyF','лезть наверх');hidePrompt();
+  await awaitChoice('KeyF','лезть наверх');
   AU.thump(.35);
   await fade(1,800);
   showWorld(outskirtWorld,{fog:0xd4ecf4,fogD:.0018,clear:0xcfeaf0});
@@ -1569,7 +1720,7 @@ async function actOuting(){
   await say('narr','Окраина. Веселье здесь разобрано на запчасти.',3000);
   miaWalk.go([V(1.4,0,29),V(-1,0,18),V(1.4,0,6),V(-1,0,-8),V(1,0,-22),V(4.6,0,-47.6)]);
   G.canMove=true;
-  ctrlTxt(IS_TOUCH?'кнопка МАСКА · жёлтые зоны':'E — маска · путь ведёт к складу');
+  ctrlTxt(IS_TOUCH?'кнопки справа · путь к складу':'Q — маска · путь ведёт к складу');
   const og=escort(1400,'OUTSK');
   await miaWalk.waypoint(5);
   clearInterval(og);
@@ -1577,8 +1728,7 @@ async function actOuting(){
   await say('mia','Склад. Там Фред спрятал припасы. Вопрос: ты умеешь бегать?',3400);
   await say('player','Умею.');
   await say('mia','Тогда молись, чтобы никто не заметил.',2600);
-  showPrompt('F','Взломать панель');
-  await awaitChoice('KeyF','подойти к панели');hidePrompt();
+  await awaitChoice('KeyF','взломать панель');
   const ok=await hackGame();
   if(ok){
     await say('mia','Тупая система, но работает.',2200);
@@ -1586,10 +1736,8 @@ async function actOuting(){
   miaWalk.go([V(4.6,0,-47.6),V(8,0,-56),V(11,0,-66)]);
   mia.moving=true;
   G.pos.set(6.4,1.68,-52);G.yaw=2.6;G.canMove=true;
-  showPrompt('F','Забрать припасы');
   await new Promise(r=>{G.cratesCheck=()=>{
     if(Math.hypot(G.pos.x-11,G.pos.z+66)<2.4)r();};});
-  hidePrompt();
   AU.thump(.3);
   await say('player','Есть. Тяжёлые.',2200);
   const{spot,spotCone}=outskirtWorld.userData;
@@ -1640,7 +1788,6 @@ async function finishChase(){
   await fade(1,450);
   G.state='WATER';
 }
-/* ---------- затопленный тоннель и КРАСНЫЙ ---------- */
 async function actWater(){
   showWorld(waterWorld,{fog:0x04070c,fogD:.09,clear:0x03050a});
   placeMia(waterWorld,V(-1.1,0,-1),0);
@@ -1679,8 +1826,7 @@ async function actWater(){
   await say('mia','Не говори. Ничего не говори.',2600);
   await wait(500);
   await say('red','Имя.',1800);
-  const ch=await awaitChoice('KeyE','назвать имя',{key:'KeyQ',label:' молчать'});
-  hidePrompt();
+  const ch=await awaitChoice('KeyE','назвать имя',{key:'KeyQ',label:'молчать'});
   G.branch=ch==='main'?'named':'silent';
   if(ch==='main'){
     const nm=(G.playerName||'').trim();
@@ -1731,7 +1877,8 @@ async function postCredits(){
   waterWorld.visible=false;
   renderer.setClearColor(0x000000);scene.background=new THREE.Color(0x000000);scene.fog=null;
   document.body.classList.remove('masked');
-  $('#maskBtn').style.display='none';
+  hidePrompt();setEReady(false);
+  $('#rotHint').classList.remove('on');
   document.exitPointerLock&&document.exitPointerLock();
   await wait(700);
   const bp=$('#bluePost');bp.classList.add('on');
@@ -1767,7 +1914,6 @@ async function postCredits(){
   $('#endCard').classList.add('on');
 }
 
-/* ================= ГЛАВНЫЙ СЦЕНАРИЙ =============================== */
 async function scriptMain(){
   try{
     await actRoof();
@@ -1820,7 +1966,7 @@ function animate(){
         if(d>70){nx*=70/d;nz*=70/d;}
         if(G.squareCheck)G.squareCheck();}
       else if(G.state==='PATROL'){
-        nx=clamp(nx,-4.6,4.6);nz=clamp(nz,-40.5,46);
+        nx=clamp(nx,-4.6,4.6);nz=clamp(nz,-43.2,46);
         let danger=0;
         pats.forEach(p=>{
           const dx=nx-p.obj.g.position.x,dzn=nz-p.obj.g.position.z,d2=Math.hypot(dx,dzn)||.001;
@@ -1830,7 +1976,8 @@ function animate(){
         if(G.masked){G.joy-=dt*4;G.maskT+=dt;
           if(G.maskT>7&&!G.longMaskSaid){G.longMaskSaid=true;
             miaSay('Снимай. Начинаешь думать.',2400);}}
-        else G.joy-=(danger>0?(10+danger*46):dt*1.6);
+        else if(danger>0)G.joy-=10+danger*46;
+        else G.joy=Math.min(100,G.joy+dt*3.5);
         G.catchGlow=danger>0&&!G.masked?danger:0;
         if(G.joy<=0&&!G.patrolBusy){G.joy=0;joyFX();G.patrolBusy=true;
           patrolCaught().then(()=>G.patrolBusy=false);}
@@ -1847,7 +1994,17 @@ function animate(){
         if(Math.random()<dt*2.2)AU.splash(.06);}
       G.pos.x=nx;G.pos.z=nz;}}
 
-  // камера
+  /* мобильное: джойстик + кнопки E/Q видны вместе */
+  if(IS_TOUCH){
+    const wantStick=mover&&G.canMove&&!G.camO&&G.state!=='CHASE';
+    const s=$('#stickUI');
+    const showing=s.style.display==='block';
+    if(wantStick&&!showing&&!stickActive)placeStickBase();
+    s.style.display=wantStick?'block':'none';
+    const wantKeys=wantStick||!!G.keyHandler;
+    $('#keyBtns').classList.toggle('on',wantKeys);
+  }
+
   if(G.camO){
     camera.position.copy(G.pos);
     camera.lookAt(G.lookCur);
@@ -1877,9 +2034,6 @@ function animate(){
     camera.position.y+=rnd(-1,1)*.03*G.shake;
     camera.rotation.z+=rnd(-1,1)*.006*G.shake;}
   $('#catchFlash').style.opacity=(G.catchGlow||0)*(G.state==='PATROL'?.85:0);
-
-  $('#maskBtn').style.display=
-    (IS_TOUCH&&['PATROL','OUTSK'].includes(G.state)&&G.canMove)?'block':'none';
 
   function tickWalkAnim(h,dt2,rate=9){
     if(h.moving){h.walkT+=dt2*rate;
@@ -1924,13 +2078,14 @@ function animate(){
     smokeStep(dt);}
 
   if(patrolWorld.visible){
-    /* маяк люка дышит */
     const bc=patrolWorld.userData;
     if(bc.beacon){
       bc.beacon.material.opacity=.09+Math.abs(Math.sin(t*1.7))*.1;
       bc.glowRing.material.opacity=.5+Math.abs(Math.sin(t*2.2))*.4;
       bc.glowRing.scale.setScalar(1+Math.sin(t*2.2)*.1);
-      bc.beaconLight.intensity=.6+Math.abs(Math.sin(t*1.7))*.6;}
+      bc.beaconLight.intensity=.6+Math.abs(Math.sin(t*1.7))*.6;
+      /* зона действия люка пульсирует ярче, когда E доступна */
+      bc.zone.material.opacity=G.hatchReady?.3+Math.abs(Math.sin(t*4))*.2:.14;}
     pats.forEach(p=>{
       p.t+=p.speed*p.dir*dt/p.a.distanceTo(p.b);
       if(p.t>=1){p.t=1;p.dir=-1;}if(p.t<=0){p.t=0;p.dir=1;}
@@ -1939,9 +2094,8 @@ function animate(){
       p.obj.g.rotation.y=Math.atan2(fx,fz);
       p.obj.legL.rotation.x=Math.sin(p.t*30)*.5;
       p.obj.legR.rotation.x=-Math.sin(p.t*30)*.5;});
-    /* Мия идёт СЛЕДОМ за игроком — не может застрять */
     if(G.state==='PATROL'&&miaFollowMode)miaWalk.follow(dt,{behind:1.9});
-    else miaWalk.tick(dt),tickWalkAnim(mia,dt);
+    else{miaWalk.tick(dt);tickWalkAnim(mia,dt);}
     smokeStep(dt);}
 
   if(tunnelWorld.visible){
@@ -1972,14 +2126,18 @@ function animate(){
 
 /* ===================== СТАРТ ====================================== */
 showWorld(roofWorld,{fog:0x9b9c99,fogD:.005,clear:0x9b9c99});
+fsIcon();
  $('#restartBtn').addEventListener('click',()=>location.reload());
  $('#startBtn').addEventListener('click',async()=>{
   AU.init();AU.ctx.resume&&AU.ctx.resume();
   G.playerName=$('#nameInput').value.replace(/[<>]/g,'').slice(0,16);
-  document.activeElement&&document.activeElement.blur&&document.activeElement.blur();
+  const ni=$('#nameInput');
+  ni.blur();ni.setAttribute('readonly','readonly');ni.disabled=true;
   $('#menu').classList.add('off');
   G.state='ROOF';
   G.pos.set(0,61.68,-50);G.yaw=Math.PI;G.pitch=0;
+  checkRot();
+  if(!isFS())toggleFS().catch(()=>{});   /* авто-фуллскрин; при отказе — тост */
   scriptMain();
 });
 animate();
