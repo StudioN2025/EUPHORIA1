@@ -1613,7 +1613,7 @@ function camTween(toPos,toLook,ms){
       G.pos.lerpVectors(fp,toPos,e);
       camera.position.copy(G.pos);
       camera.lookAt(toLook);
-      if(k<1)requestAnimationFrame(go):res();})();});}
+      if(k<1)requestAnimationFrame(go);else res();})();});}
 function releaseCam(){G.camO=false;}
 function showWorld(world,{fog,fogD=0,clear}={}){
   [roofWorld,voidWorld,candyWorld,patrolWorld,tunnelWorld,outskirtWorld,waterWorld]
