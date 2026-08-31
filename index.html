@@ -1436,9 +1436,6 @@ addEventListener('keydown',e=>{
   keys[e.code]=true;
   if(e.code==='KeyE')pressE();
   if(e.code==='KeyQ'||e.code==='KeyM')pressQ();
-  if(['KeyW','KeyA','KeyS','KeyD','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']
-     .includes(e.code)&&G.state==='CHASE'){
-    if(e.code!==G.lastTap){G.chaseDist=Math.min(100,G.chaseDist+3.4);G.lastTap=e.code;}}
   if(!['KeyE','KeyQ','KeyM'].includes(e.code)&&G.keyHandler)G.keyHandler(e.code);});
 addEventListener('keyup',e=>keys[e.code]=false);
 function bindKeyBtn(el,fn){
@@ -2231,7 +2228,7 @@ async function yardScene(){
 function startChase(){
   G.state='CHASE';G.canMove=true;G.chaseActive=true;
   G.chaseDist=0;G.lastTap='';AU.chase=true;G.fovBase=84;
-  G.runStam=100;G.yaw=Math.PI;  /* смотрим к выходу (+z) */
+  G.runStam=100;G.yaw=Math.PI;
   $('#runWrap').classList.add('on');
   $('#runDist').textContent='Красный за тобой!';
   $('#redAlert').classList.add('on');
@@ -2259,7 +2256,7 @@ async function chaseWinScene(){
   await fade(1,450);
   waterScene();
 }
-/* Красный-преследователь: живёт в главном цикле (state==='CHASE') */
+/* Красный-преследователь: вызывается из главного цикла */
 let redCatchCooldown=0;
 function chaseUpdate(dt,t){
   const dist=Math.hypot(redObj.g.position.x-G.pos.x,redObj.g.position.z-G.pos.z);
@@ -2295,11 +2292,152 @@ function chaseUpdate(dt,t){
   sf.style.background=G.runStam>50?'#8dff6a':G.runStam>20?'#ffd94d':'#ff5a54';
   return{sprinting};
 }
+async function waterScene(){
+  log('act: water');
+  showWorld(waterWorld,{fog:0x04070c,fogD:.09,clear:0x03050a});
+  placeMia(waterWorld,V(-1.1,0,-1),0);
+  G.pos.set(0,1.3,1);G.yaw=0;G.pitch=0;G.canMove=false;
+  AU.splash(.4);flash(.35,220);
+  await fade(0,1200);
+  await say('narr','Вода по колено. Темнота. Ты на четвереньках в ледяной жиже.',3600);
+  await say('narr','Сверху — шаги. Потом — удаляются.',2400);
+  await say('mia','Отдышись. Дыши.',2000);
+  await wait(600);
+  await say('mia','Это была не патрульная группа. Это был Красный.',3000);
+  await say('player','Откуда ты знаешь?');
+  await say('mia','Потому что жёлтые не бегают так быстро.',2600);
+  await say('mia','Они что-то знают. Про тебя. Ты уверен, что ничего не помнишь?',3600);
+  await say('player','Абсолютно.');
+  await say('mia','Ладно. Надо вернуться, пока они не спустились.',2800);
+  G.shake=.4;
+  AU.thump(.4);await wait(700);AU.thump(.45);await wait(650);
+  await say('mia','Они идут за нами.',2200);
+  AU.thump(.5);await wait(500);AU.thump(.5);await wait(450);AU.thump(.55);
+  await new Promise(res=>{const t0=performance.now();(function bl(){
+    const k=Math.min(1,(performance.now()-t0)/900);
+    torchBeam.material.opacity=Math.sin(k*Math.PI)*.35;
+    k<1?requestAnimationFrame(bl):(torchBeam.material.opacity=0,res());})();});
+  await say('red','Стоять.',2000);
+  redObj.g.position.set(0,0,-13.4);
+  const t0=performance.now();
+  await new Promise(res=>{(function app(){const k=Math.min(1,(performance.now()-t0)/2400);
+    redObj.g.position.z=lerp(-13.4,-11.4,k);
+    redObj.legL.rotation.x=Math.sin(k*24)*.35;redObj.legR.rotation.x=-Math.sin(k*24)*.35;
+    if(Math.floor(k*8)!==Math.floor((k-1/60)*8))AU.thump(.5);
+    k<1?requestAnimationFrame(app):(redObj.legL.rotation.x=0,res());})();});
+  G.shake=1;
+  await say('red','Вы нарушаете протокол счастья.',2800);
+  await say('red','Ваше имя?',2400);
+  await say('mia','Не говори. Ничего не говори.',2600);
+  await wait(500);
+  await say('red','Имя.',1800);
+  const ch=await awaitChoice('KeyE','назвать имя',{key:'KeyQ',label:'молчать'});
+  G.branch=ch==='main'?'named':'silent';
+  if(ch==='main'){
+    const nm=(G.playerName||'').trim();
+    redObj.tab.rotation.x=0;
+    await say('player',nm||'…мне…',1800);
+    await say('red',(nm?`«${nm}». `:'')+'Не в базе.',3000);
+    await say('red','Значит — нелегал.',2200);
+    await moveObj(redObj.g,V(0,0,-9.2),1100);
+    await say('mia','Пусти его!',1800);
+    await say('player','Иди. Я догоню.',2000);
+    await say('mia','Обещаешь?',1800);
+    await say('player','Обещаю.',1600);
+    await moveObj(mia.g,V(-1.6,0,-24),1600);
+    mia.g.visible=false;
+    await say('red','Умно.',1600);
+    await say('red','Теперь — спать.',2000);
+    flash(1,150);AU.thump(.7);G.shake=2.4;
+    await fade(1,600);
+  }else{
+    await wait(1400);
+    await say('narr','Ты молчишь.',1800);
+    await say('red','Хорошо.',1800);
+    await say('red','В Центре разговорим.',2400);
+    AU.thump(.5);G.shake=1.6;
+    await say('mia','Отпусти его!',2000);
+    const steps=setInterval(()=>AU.thump(.42),760);
+    await new Promise(res=>{const t1=performance.now();(function carry(){
+      const k=Math.min(1,(performance.now()-t1)/4200);
+      G.pos.set(redObj.g.position.x+Math.sin(performance.now()/300)*.3,1.05,redObj.g.position.z-1.15);
+      redObj.g.position.z=-9.2-k*16;
+      redObj.legL.rotation.x=Math.sin(performance.now()/230)*.4;
+      redObj.legR.rotation.x=-Math.sin(performance.now()/230)*.4;
+      G.pitch=lerp(G.pitch,-1.18,.05);
+      G.yaw=Math.PI;
+      if(k>=.9)mia.g.visible=false;
+      k<1?requestAnimationFrame(carry):res();})();});
+    clearInterval(steps);
+    await say('red','Беги, девочка. Пока можешь.',2600);
+    mia.g.visible=false;
+    await fade(1,1200);
+    await say('mia','Я вернусь за тобой. Обещаю.',3400);
+  }
+  await wait(700);
+  postCredits();
+}
+async function postCredits(){
+  log('act: post');
+  G.state='POST';
+  waterWorld.visible=false;
+  renderer.setClearColor(0x000000);scene.background=new THREE.Color(0x000000);scene.fog=null;
+  document.body.classList.remove('masked');
+  forceHidePrompt();setEReady(false);
+  $('#rotHint').classList.remove('on');
+  document.exitPointerLock&&document.exitPointerLock();
+  await wait(700);
+  const bp=$('#bluePost');bp.classList.add('on');
+  $('#blueText').innerHTML='<span id="blTxt"></span><span id="blueCur"></span>';
+  AU.blip(1200,.1,'sine',.05);
+  const lines=['> новый.',
+    '> четырнадцатый за этот месяц.',
+    '> откуда они все берутся?',
+    '',
+    G.branch==='named'
+      ?'> представился: '+((G.playerName||'…').trim().toLowerCase())
+      :'> субъект молчал.',
+    '',
+    '> крыши. все с крыш.',
+    '> зачем мы их построили,',
+    '> если они только для этого и нужны?',
+    '',
+    '> чтобы был выход.',
+    '',
+    '> выхода нет. только вход.'];
+  const el=$('#blTxt');
+  for(const ln of lines){
+    for(const chr of ln){el.textContent+=chr;
+      if(chr.trim())AU.blip(rnd(1800,2200),.012,'square',.014);await wait(26);}
+    el.textContent+='\n';await wait(ln?430:150);}
+  await wait(1900);
+  bp.classList.remove('on');
+  $('#fadeBlack').style.opacity=1;
+  G.state='END';
+  $('#endNote').textContent=G.branch==='named'
+    ?'ветка: «назвал имя» · данные внесены в реестр нелегалов'
+    :'ветка: «промолчал» · запись ведётся по шаблону №14';
+  $('#endCard').classList.add('on');
+}
+async function scriptMain(){
+  try{
+    await actRoof();
+    await actVoid();
+    await actCandy();
+    await actPatrol();
+    /* дальше — самостоятельные потоки:
+       tryHatch → tunnelScene → shelterScene → outingScene
+       → tryHackPanel → yardScene → startChase → endChaseWin → waterScene → postCredits */
+  }catch(err){
+    console.error(err);
+  }
+}
 
 /* ================== ГЛАВНЫЙ ЦИКЛ ================================== */
 const clock=new THREE.Clock();
 const tmpO=new THREE.Object3D();
 let lastPos=V(0,0,0);
+let stickActive=false;
 function animate(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
@@ -2363,7 +2501,7 @@ function animate(){
         if(Math.random()<dt*2.2)AU.splash(.06);}
       G.pos.x=nx;G.pos.z=nz;}}
 
-  /* ===== ПОБЕГ: полноценное управление + преследователь ===== */
+  /* ===== ПОБЕГ: управление игроком + преследователь ===== */
   if(G.state==='CHASE'&&G.chaseActive){
     let mx=0,mz=0;
     if(keys.KeyW||keys.ArrowUp)mz-=1;if(keys.KeyS||keys.ArrowDown)mz+=1;
@@ -2399,7 +2537,7 @@ function animate(){
     camera.lookAt(G.pos.x-Math.sin(G.yaw)*2,1.25,G.pos.z-Math.cos(G.yaw)*2);
     camera.rotation.z+=rnd(-1,1)*.004;
     camera.fov+=(G.fovBase-camera.fov)*dt*4;camera.updateProjectionMatrix();
-    /* Мия бежит рядом/впереди */
+    /* Мия бежит рядом */
     miaWalk.tick(dt);tickWalkAnim(mia,dt,12);
     if(mia.g.position.distanceTo(V(G.pos.x,0,G.pos.z))>8)
       mia.g.position.lerp(V(G.pos.x,0,G.pos.z),.04);
