@@ -52,7 +52,6 @@
   #joyLabel{font-size:10px;letter-spacing:.3em;color:#ffe27a;text-transform:uppercase;margin-bottom:6px;font-weight:800}
   #joyBar{width:180px;height:8px;border:1px solid rgba(255,226,122,.5)}
   #joyFill{height:100%;width:100%;background:#ffd94d;transition:width .12s linear,background .3s}
-  /* ===== ПОБЕГ: HUD ===== */
   #runWrap{position:absolute;left:50%;bottom:calc(9vh + 18px);transform:translateX(-50%);display:none;text-align:center}
   #runWrap.on{display:block}
   #runDist{font-family:'Unbounded';font-weight:700;font-size:11px;letter-spacing:.3em;color:#ff5a54;text-transform:uppercase;margin-bottom:6px;animation:bcastPulse .8s ease-in-out infinite}
@@ -147,7 +146,7 @@
 <div id="hud" class="layer">
   <div id="broadcast"></div><div id="bigCaption"></div>
   <div id="joyWrap"><div id="joyLabel">Фальшивая радость</div><div id="joyBar"><div id="joyFill"></div></div></div>
-  <div id="runWrap"><div id="runDist">Красный рядом!</div><div id="stamBar"><div id="stamFill"></div></div></div>
+  <div id="runWrap"><div id="runDist">Красный за тобой!</div><div id="stamBar"><div id="stamFill"></div></div></div>
   <div id="redAlert">БЕГИ</div>
   <div id="subsWrap"><div id="speaker"></div><div id="subText"></div></div>
   <div id="prompt"><b>E</b><span id="promptText"></span></div>
@@ -210,10 +209,6 @@ function placeStickBase(){
   s.style.left='26px';
   s.style.top=(innerHeight-bar-26-112)+'px';
   $('#stickKnob').style.transform='translate(-50%,-50%)';}
-function unlockControls(){
-  G.camO=false;
-  G.canMove=true;
-  log('controls: разблокированы');}
 
 /* ================== ЗАЩИТА ВЫДЕЛЕНИЯ/ПЕРЕТАСКИВАНИЯ =============== */
 document.addEventListener('dragstart',e=>e.preventDefault());
@@ -623,7 +618,7 @@ const roofFans=[];
   dir.target.position.set(0,58,-42);roofWorld.add(dir,dir.target);
 })();
 
-/* ============ ФАБРИКА ПЕРСОНАЖЕЙ v2 ============ */
+/* ============ ФАБРИКА ПЕРСОНАЖЕЙ ============ */
 function makeHumanoid(o={}){
   const g=new THREE.Group();
   const M=(c,r=.6)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
@@ -1297,9 +1292,9 @@ let whGate=null,chaseCrates=[];
   for(let i=0;i<10;i++){const bx=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),wood);
     bx.position.set(rnd(2,14.5),.5,-72+(i%4)*4.4+rnd(-1,1));
     bx.rotation.y=rnd(0,1);bx.castShadow=bx.receiveShadow=true;outskirtWorld.add(bx);}
-  /* НОВОЕ: ящики-препятствия НА ПУТИ ПОБЕГИ (улица) */
-  const cratePts=[[2.6,-46],[4.6,-40],[-3.2,-34],[-2,-26],[3.4,-18],[-4,-10],[2.2,-2],[-3.4,6],[3,14]];
-  cratePts.forEach(([cx,cz])=>{
+  /* ящики-препятствия на пути побега */
+  [[2.6,-44],[4.4,-38],[-3.2,-32],[-2,-24],[3.4,-16],[-4,-8],[2.2,0],[-3.4,8],[3,16]]
+  .forEach(([cx,cz])=>{
     const c=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.2,1.4),wood);
     c.position.set(cx,.6,cz);c.rotation.y=rnd(0,1.4);
     c.castShadow=c.receiveShadow=true;outskirtWorld.add(c);
@@ -1420,13 +1415,12 @@ const G={
   hatchUsed:false,hatchReady:false,lidT:0,
   panelReady:false,panelDone:false,
   photosSeen:0,radioUsed:false,nightSkip:false,nightPrompt:false,
-  lockPrompt:false,   /* диалоги глушат системные подсказки */
+  lockPrompt:false,runStam:100,
 };
 
 /* =========================== ВВОД ================================= */
 const keys={};
 function setEReady(on){$('#kbE').classList.toggle('ready',!!on);}
-function hidePrompt(){G.lockPrompt=false;$('#prompt').classList.remove('on');}
 function pressE(){
   if(G.lockPrompt&&G.keyHandler){G.keyHandler('KeyE');return;}
   if(G.state==='PATROL'&&!G.hatchUsed&&G.canMove&&
@@ -1444,7 +1438,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyQ'||e.code==='KeyM')pressQ();
   if(['KeyW','KeyA','KeyS','KeyD','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']
      .includes(e.code)&&G.state==='CHASE'){
-    if(e.code!==G.lastTap){G.chaseDist=Math.min(100,G.chaseDist+3.4);G.lastTap=e.code;AU.splash(.05);}}
+    if(e.code!==G.lastTap){G.chaseDist=Math.min(100,G.chaseDist+3.4);G.lastTap=e.code;}}
   if(!['KeyE','KeyQ','KeyM'].includes(e.code)&&G.keyHandler)G.keyHandler(e.code);});
 addEventListener('keyup',e=>keys[e.code]=false);
 function bindKeyBtn(el,fn){
@@ -1473,7 +1467,6 @@ if(IS_TOUCH){
   let moveId=null,lookId=null,mBase={x:0,y:0},lLast={x:0,y:0};
   const stick=$('#stickUI');
   canvas.addEventListener('touchstart',e=>{
-    if(G.state==='CHASE'){G.chaseDist=Math.min(100,G.chaseDist+4.2);AU.splash(.05);}
     for(const t of e.changedTouches){
       if(t.clientX<innerWidth/2&&moveId===null){
         moveId=t.identifier;stickActive=true;mBase={x:t.clientX,y:t.clientY};
@@ -1523,12 +1516,13 @@ async function say(who,text,hold){
   clearTimeout(G.subTO);
   await new Promise(r=>{G.subTO=setTimeout(r,hold||(1500+text.length*50));});
   w.classList.remove('on');await wait(340);}
+/* ЕДИНСТВЕННЫЕ showPrompt/hidePrompt — уважают lockPrompt */
 function showPrompt(key,label){
-  if(G.lockPrompt)return;   /* диалог важнее */
+  if(G.lockPrompt)return;
   $('#promptText').textContent=label;
   $('#prompt b').textContent=key;$('#prompt').classList.add('on');}
 function hidePrompt(){
-  if(G.lockPrompt)return;   /* не гасим диалоговую подсказку */
+  if(G.lockPrompt)return;
   $('#prompt').classList.remove('on');}
 function forceHidePrompt(){
   G.lockPrompt=false;$('#prompt').classList.remove('on');}
@@ -1542,7 +1536,7 @@ function awaitChoice(keyMain,labelMain,extra){
     G.keyHandler=c=>{
       if(c===keyMain||c==='KeyE')finish('main');
       else if(extra&&(c===extra.key||c==='KeyQ'))finish('alt');};
-    G.lockPrompt=true;   /* глушим системные подсказки на время выбора */
+    G.lockPrompt=true;
     const kd=IS_TOUCH?'E':keyMain.replace('Key','');
     const ka=extra?(IS_TOUCH?'Q':extra.key.replace('Key','')):'';
     $('#prompt b').textContent=kd;
@@ -1685,7 +1679,7 @@ function spawnSmoke(center,op=.9){
   const host=candyWorld.visible?candyWorld:patrolWorld.visible?patrolWorld:outskirtWorld;
   host.add(smoke.pts);}
 
-/* ============ МИНИ-ИГРА ВЗЛОМА v2: 4 этапа, ускорение ============ */
+/* ============ МИНИ-ИГРА ВЗЛОМА: 4 этапа, ускорение ============ */
 function hackGame(){
   return new Promise(resolve=>{
     const ui=$('#hackUI'),row=$('#hackRow'),msg=$('#hackMsg'),stg=$('#hackStage');
@@ -1696,7 +1690,6 @@ function hackGame(){
       b.className='hbtn';b.style.background=c;b.style.color=c;row.appendChild(b);
       b.onclick=()=>press(i);return b;});
     ui.classList.add('on');
-    /* 4 этапа: длина 3-4-5-6, темп ускоряется, окна на повтор строже */
     const stages=[
       {len:3,noteGap:640,gapShow:420},
       {len:4,noteGap:560,gapShow:340},
@@ -2234,20 +2227,21 @@ async function yardScene(){
   await say('mia','Бля. Бежим!!',1600);
   startChase();
 }
-/* ===== ПОБЕГ v2: как в Poppy Playtime — ты бежишь сам, Красный дышит в спину ===== */
+/* ===== ПОБЕГ: ты бежишь сам, Красный дышит в спину ===== */
 function startChase(){
   G.state='CHASE';G.canMove=true;G.chaseActive=true;
   G.chaseDist=0;G.lastTap='';AU.chase=true;G.fovBase=84;
-  G.runStam=100;
+  G.runStam=100;G.yaw=Math.PI;  /* смотрим к выходу (+z) */
   $('#runWrap').classList.add('on');
   $('#runDist').textContent='Красный за тобой!';
   $('#redAlert').classList.add('on');
+  setTimeout(()=>$('#redAlert').classList.remove('on'),2200);
   broadcast('Обнаружены граждане с недостаточным уровнем радости. Просьба остановиться для коррекции.');
-  placeMia(outskirtWorld,V(9.2,0,-64),Math.PI*.75);
+  placeMia(outskirtWorld,V(9.2,0,-64),Math.PI*.9);
   const{spot,spotCone}=outskirtWorld.userData;
-  spot.intensity=50;
-  log('chase v2: старт — игрок управляет');
-  /* логика Красного-преследователя живёт в главном цикле (G.state==='CHASE') */
+  spot.visible=true;spot.intensity=50;spotCone.visible=true;
+  redCatchCooldown=0;
+  log('chase: старт — игрок управляет');
 }
 function endChaseWin(){
   G.chaseActive=false;AU.chase=false;G.fovBase=76;
@@ -2265,20 +2259,16 @@ async function chaseWinScene(){
   await fade(1,450);
   waterScene();
 }
-/* ================== ГЛАВНЫЙ ЦИКЛ ================================== */
-const clock=new THREE.Clock();
-const tmpO=new THREE.Object3D();
-let lastPos=V(0,0,0);
-let redChaseStep=0,redChaseLast=0,redCatchCooldown=0;
+/* Красный-преследователь: живёт в главном цикле (state==='CHASE') */
+let redCatchCooldown=0;
 function chaseUpdate(dt,t){
-  /* Красный бежит за игроком */
-  const dir=V(-G.pos.x,0,-G.pos.z+30).normalize();
   const dist=Math.hypot(redObj.g.position.x-G.pos.x,redObj.g.position.z-G.pos.z);
-  /* скорость Красного чуть меньше бега игрока — но он не устаёт */
-  const redSpd=4.6+Math.sin(t*2)*.3;
+  const redSpd=4.7+Math.sin(t*2)*.3;
   if(dist>.1){
-    redObj.g.position.x+=(G.pos.x-redObj.g.position.x)/dist*redSpd*dt;
-    redObj.g.position.z+=(G.pos.z-redObj.g.position.z)/dist*redSpd*dt;
+    let rx=redObj.g.position.x+(G.pos.x-redObj.g.position.x)/dist*redSpd*dt;
+    let rz=redObj.g.position.z+(G.pos.z-redObj.g.position.z)/dist*redSpd*dt;
+    const[ox,oz]=outskirtClamp(rx,rz);
+    redObj.g.position.x=ox;redObj.g.position.z=oz;
   }
   redObj.g.lookAt(G.pos.x,0,G.pos.z);
   const rt=performance.now()/1000;
@@ -2286,29 +2276,30 @@ function chaseUpdate(dt,t){
   redObj.legR.rotation.x=-Math.sin(rt*11)*.7;
   redObj.armL.rotation.x=-Math.sin(rt*11)*.5;
   redObj.armR.rotation.x=Math.sin(rt*11)*.5;
-  /* прожектор гонится */
   const{spot,spotCone}=outskirtWorld.userData;
   spot.position.copy(redObj.g.position).add(V(0,3,0));
   spot.target.position.copy(G.pos);
   spotCone.position.copy(redObj.g.position).add(V(0,10,0));
-  /* пыхтит/рычит тем ближе, чем он */
   if(dist<9&&performance.now()>redCatchCooldown+2600){
     AU.growl(clamp(.42-dist*.03,.1,.4));
     redCatchCooldown=performance.now();
   }
-  /* кромка экрана краснеет от близости */
   $('#redEdge').style.opacity=clamp((10-dist)/10,0,1)*.9;
   $('#runDist').textContent=dist<4?'ОН РЯДОМ — БЕГИ!':dist<8?'Красный приближается':'Отрыв есть — не тормози';
-  /* стамина: бег быстрее, но устаёшь */
   const wantSprint=keys.ShiftLeft||keys.ShiftRight||IS_TOUCH;
   const sprinting=wantSprint&&G.runStam>1;
-  if(sprinting){G.runStam=Math.max(0,G.runStam-dt*22);}
+  if(sprinting){G.runStam=Math.max(0,G.runStam-dt*20);}
   else{G.runStam=Math.min(100,G.runStam+dt*13);}
   const sf=$('#stamFill');
   sf.style.width=G.runStam+'%';
   sf.style.background=G.runStam>50?'#8dff6a':G.runStam>20?'#ffd94d':'#ff5a54';
   return{sprinting};
 }
+
+/* ================== ГЛАВНЫЙ ЦИКЛ ================================== */
+const clock=new THREE.Clock();
+const tmpO=new THREE.Object3D();
+let lastPos=V(0,0,0);
 function animate(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
@@ -2372,61 +2363,52 @@ function animate(){
         if(Math.random()<dt*2.2)AU.splash(.06);}
       G.pos.x=nx;G.pos.z=nz;}}
 
-  /* ===== ПОБЕГ: полноценное управление ===== */
+  /* ===== ПОБЕГ: полноценное управление + преследователь ===== */
   if(G.state==='CHASE'&&G.chaseActive){
-    /* движение игрока */
     let mx=0,mz=0;
     if(keys.KeyW||keys.ArrowUp)mz-=1;if(keys.KeyS||keys.ArrowDown)mz+=1;
     if(keys.KeyA||keys.ArrowLeft)mx-=1;if(keys.KeyD||keys.ArrowRight)mx+=1;
     mx+=moveVec.x;mz+=moveVec.y;
     const len=Math.hypot(mx,mz);
-    /* камера от третьего лица за спиной — бег вперёд */
     const chs=chaseUpdate(dt,t);
     if(len>0){
-      const base=chs.sprinting?6.4:4.4;
+      const base=chs.sprinting?6.6:4.7;
       const sp=(len>1?len:1)*base*dt;
       const sy=Math.sin(G.yaw),cy=Math.cos(G.yaw);
       let nx=G.pos.x+(mx*cy+mz*sy)*sp;
       let nz=G.pos.z+(-mx*sy+mz*cy)*sp;
-      /* границы маршрута: вдоль улицы к решётке */
-      nx=clamp(nx,-5.2,12);
-      nz=clamp(nz,-67,30);
-      /* столкновения с ящиками — сбавляют ход */
+      const[ox,oz]=outskirtClamp(nx,nz);
+      nx=ox;nz=oz;
       chaseCrates.forEach(c=>{
         const d=Math.hypot(nx-c.x,nz-c.z);
         if(d<c.r+.35){
           const push=(c.r+.35-d)/Math.max(d,.01);
           nx+=(nx-c.x)*push;nz+=(nz-c.z)*push;
-          if(G.chaseDist>2&&!G._bumpT){G._bumpT=1;AU.thump(.3);G.shake=.6;
+          if(!G._bumpT){G._bumpT=1;AU.thump(.3);G.shake=.7;
             setTimeout(()=>G._bumpT=0,700);}
         }});
       G.pos.x=nx;G.pos.z=nz;
-      /* прогресс — длина пути (двор→дворец→решётка) */
-      G.chaseDist=clamp((28-G.pos.z)/58*100,0,100);
+      if(Math.floor(t*7)!==Math.floor((t-dt)*7))AU.thump(.13);
     }
-    /* шаги */
-    if(len>0&&Math.floor(t*7)!==Math.floor((t-dt)*7))AU.thump(.14);
-    /* камера: от третьего лица */
-    const back=2.6,up=1.9;
-    const camX=G.pos.x-Math.sin(G.yaw)*back*-1;
-    const camZ=G.pos.z-Math.cos(G.yaw)*back;
+    /* камера от третьего лица за спиной */
+    const bob=len>0?Math.abs(Math.sin(t*9))*.06:0;
     camera.position.set(
-      G.pos.x+Math.sin(G.yaw)*back,
-      up+Math.abs(Math.sin(t*9))*(len>0?.06:0),
-      G.pos.z+Math.cos(G.yaw)*back);
-    camera.lookAt(G.pos.x,1.2,G.pos.z-2);
-    camera.rotation.z+=rnd(-1,1)*.004;   /* тряска бега */
+      G.pos.x+Math.sin(G.yaw)*2.6,
+      1.9+bob,
+      G.pos.z+Math.cos(G.yaw)*2.6);
+    camera.lookAt(G.pos.x-Math.sin(G.yaw)*2,1.25,G.pos.z-Math.cos(G.yaw)*2);
+    camera.rotation.z+=rnd(-1,1)*.004;
     camera.fov+=(G.fovBase-camera.fov)*dt*4;camera.updateProjectionMatrix();
-    /* анимация бега Ми (она впереди, ретрит по маршруту) */
-    miaWalk.tick(dt);tickWalkAnim(mia,dt,9);
+    /* Мия бежит рядом/впереди */
+    miaWalk.tick(dt);tickWalkAnim(mia,dt,12);
     if(mia.g.position.distanceTo(V(G.pos.x,0,G.pos.z))>8)
-      mia.g.position.lerp(V(G.pos.x,0,G.pos.z),.03);
+      mia.g.position.lerp(V(G.pos.x,0,G.pos.z),.04);
     /* победа: добежал до решётки */
     if(G.pos.z>=27){log('chase: добежал');endChaseWin();}
   }
 
   if(IS_TOUCH){
-    const wantStick=(mover&&(G.canMove&&!G.camO)||G.state==='CHASE')&&G.state!=='MENU';
+    const wantStick=(mover&&G.canMove&&!G.camO)||G.state==='CHASE';
     const s=$('#stickUI');
     const showing=s.style.display==='block';
     if(wantStick&&!showing&&!stickActive)placeStickBase();
@@ -2452,7 +2434,7 @@ function animate(){
     camera.rotation.set(G.fall.pitch,G.yaw,G.fall.roll*.35);
     camera.fov+=(96-camera.fov)*dt*2.5;camera.updateProjectionMatrix();
     if(G.pos.y<12)G.fallResolve&&G.fallResolve();
-  }else if(G.state!=='CHASE'&&G.state!=='MENU'&&G.state!=='POST'&&G.state!=='END'){
+  }else if(!['MENU','POST','END','CHASE'].includes(G.state)){
     camera.position.copy(G.pos);
     camera.rotation.order='YXZ';
     camera.rotation.set(G.pitch,G.yaw,0);
@@ -2468,7 +2450,7 @@ function animate(){
       h.legL.rotation.x=Math.sin(h.walkT)*.55;
       h.legR.rotation.x=-Math.sin(h.walkT)*.55;
       h.armL.rotation.x=-Math.sin(h.walkT)*.3;
-      if(h!==mia||!h.armLock)h.armR.rotation.x=Math.sin(h.walkT)*.3;
+      h.armR.rotation.x=Math.sin(h.walkT)*.3;
       h.g.position.y=Math.abs(Math.sin(h.walkT))*.045;}
     else{h.legL.rotation.x*=.9;h.legR.rotation.x*=.9;}}
 
@@ -2553,8 +2535,8 @@ function animate(){
       const target=G['ph'+i]?.45:.85;
       ph.material.opacity=lerp(ph.material.opacity||1,target,dt*4);});}
 
-  if(outskirtWorld.visible){
-    if(G.state!=='CHASE'){miaWalk.tick(dt);tickWalkAnim(mia,dt,9);}
+  if(outskirtWorld.visible&&G.state!=='CHASE'){
+    miaWalk.tick(dt);tickWalkAnim(mia,dt,9);
     if(mia.tail)mia.tail.rotation.x=Math.sin(t*1.8)*.12+(mia.moving?Math.sin(mia.walkT)*.12:0);
     const od=outskirtWorld.userData;
     if(od.panelRing){
